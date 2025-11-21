@@ -22,7 +22,7 @@ library(ggplot2)
 # Questions for Group:
 # - how should TAC be distributed over seasons?
 # - which indices should be used for MPs?
-
+# - data lags
 
 # File path to the SS3 files in WCNPOSWO-2023
 SSDir <- '../WCNPOSWO-2023/Final Base-case'
@@ -46,7 +46,7 @@ Region <- 'North Pacific'
 
 # OM Settings - to be updated
 Interval <- 3 # Management Interval
-DataLag <- 1 # data lagged by 1 year?
+DataLag <- 0 #
 nSim <- 2 # small for demo
 pYear <- 30 # number of projection years
 
