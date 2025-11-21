@@ -6,6 +6,7 @@ pak::pkg_install('blue-matter/MSEtool@dev')
 packageVersion('MSEtool') # should be v4+
 
 library(MSEtool)
+library(ggplot2)
 
 # ----- NPSWO Initial Demo Code ----
 
@@ -60,10 +61,6 @@ OM <- ImportSS(RepList,
                Interval=Interval,
                DataLag=DataLag)
 
-# this is updated in MSEtool now
-OM@Stock$Female@SRR@SpawnTimeFrac <- 0
-OM@Stock$Male@SRR@SpawnTimeFrac <- 0
-
 # Simulate Historical Fishery
 Hist <- Simulate(OM)
 
@@ -111,7 +108,6 @@ Landings <- Landings(MSE, byFleet=TRUE) |>
   dplyr::group_by(Year, Fleet, Period, MP) |>
   dplyr::summarise(Value=sum(Value))
 
-library(ggplot2)
 ggplot(Landings, aes(x=Year, y=Value, linetype=Period, color=MP)) +
   facet_wrap(~Fleet, scales='free_y') +
   geom_line() +
