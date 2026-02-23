@@ -29,7 +29,7 @@ Region <- "North Pacific"
 # OM Settings - to be updated
 Interval <- 1 # Management Interval
 DataLag <- 0 #
-nSim <- 2 # small for demo
+nSim <- 10 # small for demo
 pYear <- 25 # number of projection years
 
 # Generate OM from SS3 output
@@ -41,9 +41,102 @@ OM <- ImportSS(RepList,
   StockName = StockName,
   Species = Species,
   Interval = Interval,
-  DataLag = DataLag,
-  UpdateRecDevs = TRUE
+  DataLag = DataLag
 )
+
+OM@Control$DataOM <- list(Effort=TRUE)
+
+Hist <- Simulate(OM, DoRefLandings=FALSE)
+
+
+CurrentCatch <- function(Data) {
+  Advice(TAC=1200)
+}
+class(CurrentCatch) <- 'mp'
+
+CurrentEffort <- function(Data) {
+  # Seasonal Effort
+  SeasonalEffort <- Data@Misc$DataOM@Effort[1, 185:188, ]  # always sim 1 inside MPs
+  nSeason <- 4
+  seasonIndex <- length(Data@Years) %% nSeason + 1
+  advice <- Advice(Effort=SeasonalEffort[seasonIndex, ],
+                   EffType = 'Abs')
+  advice
+}
+class(CurrentEffort) <- "mp"
+
+MPs <- c('CurrentEffort')
+
+MSE <- Project(Hist, MPs)
+
+MSE@Landings
+MSE@FDeadArea$Female[1,50,,,1,1]
+Effort(MSE)
+
+
+
+CurrentEffort_2 <- function(Data) {
+  # Seasonal Effort
+  SeasonalEffort <- Data@Misc$DataOM@Effort[1, 185:188, ]  # always sim 1 inside MPs
+  nSeason <- 4
+  seasonIndex <- length(Data@Years) %% nSeason + 1
+  advice <- Advice(Effort=SeasonalEffort[seasonIndex, ],
+                   EffType = 'Abs')
+  advice
+}
+class(CurrentEffort_2) <- "mp"
+
+
+################################################################################
+la()
+
+LoadArgs(Simulate_om)
+
+
+Hist <- Simulate_om(OM)
+
+
+
+Hist@OM@Obs$`Female Male`$F1_JPN_WCNPO_OSDWCOLL_late_Area1@Landings@Error |> 
+  dimnames() |>
+  names()
+
+CompareSS_Number(RepList, Hist)
+
+
+CurrentEffort <- function(Data) {
+  # Seasonal Effort
+  nSeason <- 4
+  seasonIndex <- length(Data@Years) %% nSeason + 1
+  advice <- Advice()
+  advice@Effort <- SeasonalEffort[seasonIndex, ]
+  advice
+}
+class(CurrentEffort) <- "mp"
+
+
+CurrentEffort_2 <- function(Data) {
+  # Seasonal Effort
+  nSeason <- 4
+  seasonIndex <- length(Data@Years) %% nSeason + 1
+  advice <- Advice()
+  advice@Effort <- SeasonalEffort[seasonIndex, ]
+  advice
+}
+class(CurrentEffort_2) <- "mp"
+
+MPs <- c('CurrentEffort', 'CurrentEffort_2')
+
+la()
+LoadArgs(Project_hist)
+
+MSE <- Project_hist(Hist, MPs = MPs)
+
+
+
+
+
+################################################################################
 
 # ---- Simulate Historical Fishery ----
 Hist <- Simulate(OM)
