@@ -164,7 +164,7 @@ RunSS <- function(SS_path,
 
   setwd(SS_path)
   if (nohess) {
-    system2('ss3.exe',
+    system2('ss3.exe -nohess',
             stdout = stdout,
             stderr = stderr)
   } else {
