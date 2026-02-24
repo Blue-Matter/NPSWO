@@ -37,7 +37,7 @@ SetupParallel()
 
 path <- file.path(ConditionDir, 'Base')
 
-RunSS3Models(path)
+RunSS3Models(path, nmax=10)
 
 
 # ---- Base OM - WCPO fleets only ----
