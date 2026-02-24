@@ -34,14 +34,16 @@ CreateSSDirectories(OM_Name = 'Base',
 )
 
 
+# ---- Base OM - WCPO fleets only ----
 
-# ---- Base OM - some fleets ----
-
-
-
-
-
-
+CreateSSDirectories(OM_Name = 'WCPO_only',
+                    SSDirBase,
+                    ConditionDir,
+                    StochasticValues,
+                    DataFileName = 'swo2023_v004.dat',
+                    CrtFileName = 'swo2023_v007.ctl',
+                    OffFleets = c(4,5) #EPO fleets; F04_IATTC, F05_JPN_EPO_OSDWLL
+)
 
 
 

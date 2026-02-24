@@ -88,6 +88,14 @@ WriteSSFiles <- function(i, StochasticValues, SS3OutDir, dat, ctl, starter, fore
   if (!is.null(OffFleets)) {
 
     # modifiy dat
+    dat$catch$year[dat$catch$fleet %in% OffFleets] <-
+      -dat$catch$year[dat$catch$fleet %in% OffFleets]
+
+    dat$lencomp$year[dat$lencomp$fleet %in% OffFleets] <-
+      -dat$lencomp$year[dat$lencomp$fleet %in% OffFleets]
+
+    dat$CPUE$year[dat$CPUE$index %in% OffFleets] <-
+      -dat$CPUE$year[dat$CPUE$index %in% OffFleets]
 
   }
 
