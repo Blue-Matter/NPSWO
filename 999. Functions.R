@@ -130,8 +130,12 @@ CheckParallel <- function(parallel) {
   parallel
 }
 
-RunSS3Models <- function(path, Exe_path='Condition', parallel=TRUE) {
+RunSS3Models <- function(path, Exe_path='Condition', parallel=TRUE, nmax=NULL) {
   SS3Dirs <- list.dirs(path, recursive = FALSE)
+
+  if (!is.null(nmax)) {
+    SS3Dirs <- SS3Dirs[1:min(c(length(SS3Dirs), nmax))]
+  }
 
   parallel <- CheckParallel(parallel)
 
@@ -172,7 +176,8 @@ RunSS <- function(SS_path,
 
   setwd(SS_path)
   if (nohess) {
-    system2('ss3.exe -nohess',
+    system2('ss3.exe',
+            args='-nohess',
             stdout = stdout,
             stderr = stderr)
   } else {
