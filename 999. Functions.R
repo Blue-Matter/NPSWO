@@ -103,3 +103,79 @@ WriteSSFiles <- function(i, StochasticValues, SS3OutDir, dat, ctl, starter, fore
 
 
 }
+
+CheckParallel <- function(parallel) {
+  if (!parallel)
+    return(FALSE)
+  current_plan <- future::plan()
+
+  if (inherits(current_plan, "sequential")) {
+    cli::cli_alert_warning(
+      "{.val parallel = TRUE} requested, but no parallel future plan detected."
+    )
+    cli::cli_text("Initialize a parallel plan first using:")
+    cli::cli_ul()
+    cli::cli_li("e.g: `SetupParallel(workers = 4)`")
+    cli::cli_text("Running sequentially instead (`parallel = FALSE`).")
+    return(FALSE)
+  }
+  parallel
+}
+
+RunSS3Models <- function(path, Exe_path='Condition', parallel=TRUE) {
+  SS3Dirs <- list.dirs(path, recursive = FALSE)
+
+  parallel <- CheckParallel(parallel)
+
+  if (!parallel) {
+    purrr::map(SS3Dirs, \(SS_path) {
+      RunSS(SS_path, Exe_path)
+    },
+    .progress = list(
+      caller = environment(),
+      format = "Running SS3 for {.val {length(SS3Dirs)}} directories {cli::pb_bar} {cli::pb_percent}"
+    )
+    )
+
+  } else {
+    # Parallel processing
+    cli::cli_inform("Starting parallel SS3 runs for {.val {length(SS3Dirs)}} directories...")
+
+    furrr::future_map(SS3Dirs, function(SS_path) {
+      RunSS(SS_path, Exe_path)
+    })
+  }
+
+}
+
+
+RunSS <- function(SS_path,
+                  Exe_path='Condition',
+                  nohess = TRUE,
+                  stdout = FALSE,
+                  stderr=FALSE) {
+
+  old_wd <- getwd()
+
+  on.exit(setwd(old_wd))
+
+  file.copy(file.path(Exe_path, "ss3.exe"),
+            file.path(SS_path, 'ss3.exe'))
+
+  setwd(SS_path)
+  if (nohess) {
+    system2('ss3.exe',
+            stdout = stdout,
+            stderr = stderr)
+  } else {
+    system2('ss3.exe',
+            stdout = stdout,
+            stderr = stderr)
+  }
+
+
+
+  if (file.exists('ss3.exe'))
+    file.remove('ss3.exe')
+
+}
