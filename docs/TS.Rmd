@@ -1,0 +1,28 @@
+---
+title: Trial Specifications Document 
+subtitle: | 
+  North Pacific Swordfish MSE 
+author: 
+  - name: Adrian Hordyk
+    affiliation: Blue Matter Science Ltd
+  - name: "Rebecca Scott"
+    affiliation: The Ocean Foundation
+date: "`r Sys.Date()`"
+output:
+  rmdformats::robobook:
+    highlight: kate
+    toc_depth: 2
+    use_bookdown: yes
+urlcolor: blue
+always_allow_html: true
+---
+
+# Introduction
+
+```{r message=FALSE, warning=FALSE}
+```
+
+This document describes the technical details of the management strategy evaluation (MSE) framework being developed for the North Pacific Swordfish (NPSWO) fishery.
+
+This is a living document and will be continually updated as the project progresses.
+

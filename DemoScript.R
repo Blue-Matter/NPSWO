@@ -3,6 +3,8 @@
 # pak::pkg_install('blue-matter/MSEtool@prerelease')
 
 
+pak::pkg_install('blue-matter/MSEtool@dev')
+
 packageVersion("MSEtool") # should be v4+
 
 library(MSEtool)
@@ -29,7 +31,7 @@ Region <- "North Pacific"
 # OM Settings - to be updated
 Interval <- 1 # Management Interval
 DataLag <- 0 #
-nSim <- 10 # small for demo
+nSim <- 3 # small for demo
 pYear <- 25 # number of projection years
 
 # Generate OM from SS3 output
@@ -56,7 +58,9 @@ class(CurrentCatch) <- 'mp'
 
 CurrentEffort <- function(Data) {
   # Seasonal Effort
-  SeasonalEffort <- Data@Misc$DataOM@Effort[1, 185:188, ]  # always sim 1 inside MPs
+  # always sim 1 inside MPs
+
+  SeasonalEffort <- Data@Misc$DataOM@Effort[1, 185:188, ]
   nSeason <- 4
   seasonIndex <- length(Data@Years) %% nSeason + 1
   advice <- Advice(Effort=SeasonalEffort[seasonIndex, ],
@@ -65,14 +69,17 @@ CurrentEffort <- function(Data) {
 }
 class(CurrentEffort) <- "mp"
 
-MPs <- c('CurrentEffort')
+MPs <- c('CurrentEffort', 'CurrentCatch')
 
 MSE <- Project(Hist, MPs)
 
-MSE@Landings
+
+
+Hist@Number$Female|> dim()
+
 MSE@FDeadArea$Female[1,50,,,1,1]
 Effort(MSE)
-
+class?timeseries
 
 
 CurrentEffort_2 <- function(Data) {
@@ -97,7 +104,7 @@ Hist <- Simulate_om(OM)
 
 
 
-Hist@OM@Obs$`Female Male`$F1_JPN_WCNPO_OSDWCOLL_late_Area1@Landings@Error |> 
+Hist@OM@Obs$`Female Male`$F1_JPN_WCNPO_OSDWCOLL_late_Area1@Landings@Error |>
   dimnames() |>
   names()
 
