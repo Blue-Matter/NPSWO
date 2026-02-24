@@ -10,17 +10,10 @@ ConditionDir <- "../NPSWO_SS3"
 
 # ---- Import Stochastic Life-History Parameters ----
 
-StochasticValues_Female <- read.csv('LHSamples_Female.csv')
-StochasticValues_Male <- read.csv('LHSamples_Male.csv')
+StochasticValues <- read.csv('LHSamples.csv')
 
-# Note: maintain consistent M-male >> M-female?
-
-StochasticValues <- data.frame(M_female = StochasticValues_Female$M,
-                               M_male = StochasticValues_Male$M,
-                               h = StochasticValues_Female$h)
 
 pairs(StochasticValues, pch=16)
-
 
 
 # ---- Base OM ----
@@ -37,7 +30,7 @@ SetupParallel()
 
 path <- file.path(ConditionDir, 'Base')
 
-RunSS3Models(path, nmax=10)
+RunSS3Models(path)
 
 
 # ---- Base OM - WCPO fleets only ----
@@ -51,12 +44,10 @@ CreateSSDirectories(OM_Name = 'WCPO_only',
                     OffFleets = c(4,5) #EPO fleets; F04_IATTC, F05_JPN_EPO_OSDWLL
 )
 
+SetupParallel()
 
+path <- file.path(ConditionDir, 'WCPO_only')
 
-
-
-
-
-
+RunSS3Models(path)
 
 
