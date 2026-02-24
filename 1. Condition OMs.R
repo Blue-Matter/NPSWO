@@ -33,42 +33,21 @@ CreateSSDirectories(OM_Name = 'Base',
                     CrtFileName = 'swo2023_v007.ctl'
 )
 
+SetupParallel()
 
+path <- file.path(ConditionDir, 'Base')
 
-# ---- Base OM - some fleets ----
-
-
-
-
-
+RunSS3Models(path)
 
 
 
 
 
-# Run the SS3 models
-# Note: can run this in parallel if it takes too long
-SS3Dirs <- list.dirs(SS3OutDir, recursive = FALSE)
-
-WD <- getwd()
-for (i in seq_along(SS3Dirs)) {
-  setwd(WD)
-  # copy SS3 executable
-  file.copy("Condition/SS3.exe", file.path(SS3Dirs[i], 'SS3.exe'))
-
-  setwd(SS3Dirs[i])
-  system2('SS3.exe', stdout = FALSE, stderr = FALSE)
-
-  # delete SS3 executable
-  if (file.exists('SS3.exe'))
-    file.remove('SS3.exe')
-}
 
 
-setwd(WD)
 
-OM <- ImportSS(SS3Dirs[i])
-Hist <- Simulate(OM)
+
+
 
 
 
