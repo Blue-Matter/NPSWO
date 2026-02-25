@@ -8,6 +8,8 @@ SSDirBase <- "../WCNPOSWO-2023/Final Base-case"
 
 ConditionDir <- "../NPSWO_SS3"
 
+n <- 50
+
 # ---- Import Stochastic Life-History Parameters ----
 
 StochasticValues <- read.csv('LHSamples.csv')
@@ -35,11 +37,10 @@ RunSS3Models(path)
 SetupParallel()
 
 SSDirs <- list.dirs(path, recursive=FALSE)
-RepList <- ImportSSReport(SSDirs[1:50], parallel = TRUE)
+RepList <- ImportSSReport(SSDirs[1:n], parallel = TRUE)
 
 OM_Base <- ImportSS(RepList)
 Save(OM_Base, "Objects_OM/Base.om", overwrite = TRUE)
-
 
 
 # ---- Base OM - WCPO fleets only ----
@@ -61,7 +62,7 @@ RunSS3Models(path)
 
 SetupParallel()
 SSDirs <- list.dirs(path, recursive=FALSE)
-RepList <- ImportSSReport(SSDirs[1:50], parallel = TRUE)
+RepList <- ImportSSReport(SSDirs[1:n], parallel = TRUE)
 
 WCPO_only <- ImportSS(RepList)
 Save(WCPO_only, "Objects_OM/WCPO_only.om")
