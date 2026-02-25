@@ -63,8 +63,8 @@ PE_mu <- 0.42
 
 # ---- Length-Weight ----
 
-#Wa_mu <- 1.3718E-5
-#Wb_mu <-  3.09773
+Wa_mu <- 1.30E-5
+Wb_mu <-  3.07
 
 #
 # h2CR <- function(h) {
