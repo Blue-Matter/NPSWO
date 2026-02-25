@@ -33,11 +33,13 @@ path <- file.path(ConditionDir, 'Base')
 RunSS3Models(path)
 
 SetupParallel()
+
 SSDirs <- list.dirs(path, recursive=FALSE)
-RepList <- ImportSSReport(SSDirs, parallel = TRUE)
+RepList <- ImportSSReport(SSDirs[1:50], parallel = TRUE)
 
 OM_Base <- ImportSS(RepList)
-Save(OM_Base, "Objects_OM/Base.om")
+Save(OM_Base, "Objects_OM/Base.om", overwrite = TRUE)
+
 
 
 # ---- Base OM - WCPO fleets only ----
@@ -59,7 +61,7 @@ RunSS3Models(path)
 
 SetupParallel()
 SSDirs <- list.dirs(path, recursive=FALSE)
-RepList <- ImportSSReport(SSDirs, parallel = TRUE)
+RepList <- ImportSSReport(SSDirs[1:50], parallel = TRUE)
 
 WCPO_only <- ImportSS(RepList)
 Save(WCPO_only, "Objects_OM/WCPO_only.om")
