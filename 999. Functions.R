@@ -112,23 +112,7 @@ WriteSSFiles <- function(i, StochasticValues, SS3OutDir, dat, ctl, starter, fore
 
 }
 
-CheckParallel <- function(parallel) {
-  if (!parallel)
-    return(FALSE)
-  current_plan <- future::plan()
 
-  if (inherits(current_plan, "sequential")) {
-    cli::cli_alert_warning(
-      "{.val parallel = TRUE} requested, but no parallel future plan detected."
-    )
-    cli::cli_text("Initialize a parallel plan first using:")
-    cli::cli_ul()
-    cli::cli_li("e.g: `SetupParallel(workers = 4)`")
-    cli::cli_text("Running sequentially instead (`parallel = FALSE`).")
-    return(FALSE)
-  }
-  parallel
-}
 
 RunSS3Models <- function(path, Exe_path='Condition', parallel=TRUE, nmax=NULL) {
   SS3Dirs <- list.dirs(path, recursive = FALSE)
@@ -137,7 +121,7 @@ RunSS3Models <- function(path, Exe_path='Condition', parallel=TRUE, nmax=NULL) {
     SS3Dirs <- SS3Dirs[1:min(c(length(SS3Dirs), nmax))]
   }
 
-  parallel <- CheckParallel(parallel)
+  parallel <- MSEtool:::CheckParallel(parallel)
 
   if (!parallel) {
     purrr::map(SS3Dirs, \(SS_path) {
