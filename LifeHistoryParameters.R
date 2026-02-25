@@ -39,7 +39,7 @@ L_Amin_mu_m <- 83.2
 
 # ---- Maturity ----
 
-L50_mu <- 143.68
+L50_mu <- 143.68 #value is for females
 #L95_mu <- 94
 
 # ---- Stock Recruit ----
