@@ -8,6 +8,21 @@ SSDirBase <- "../WCNPOSWO-2023/Final Base-case"
 
 ConditionDir <- "../NPSWO_SS3"
 
+# Combine Fleet Info
+Names <- list("JPN_WCNPO_OSDWCOLL_Area1",
+              "TWN_WCNPO_DWLL",
+              "US_WCNPO_LL_shallow",
+              "JPN_WCNPO_Other")
+
+Fleets <- list(
+  c(1,6),
+  c(2, 13),
+  c(3, 7),
+  c(11, 12)
+)
+
+
+
 n <- 50
 
 # ---- Import Stochastic Life-History Parameters ----
@@ -39,7 +54,8 @@ SetupParallel()
 SSDirs <- list.dirs(path, recursive=FALSE)
 RepList <- ImportSSReport(SSDirs[1:n], parallel = TRUE)
 
-OM_Base <- ImportSS(RepList)
+OM_Base <- ImportSS(RepList) |> CombineFleets(Names, Fleets)
+
 Save(OM_Base, "Objects_OM/Base.om", overwrite = TRUE)
 
 
@@ -64,6 +80,6 @@ SetupParallel()
 SSDirs <- list.dirs(path, recursive=FALSE)
 RepList <- ImportSSReport(SSDirs[1:n], parallel = TRUE)
 
-WCPO_only <- ImportSS(RepList)
+WCPO_only <- ImportSS(RepList) |> CombineFleets(Names, Fleets)
 Save(WCPO_only, "Objects_OM/WCPO_only.om")
 
