@@ -5,7 +5,7 @@ subtitle: |
 author: 
   - name: Adrian Hordyk
     affiliation: Blue Matter Science Ltd
-  - name: "Rebecca Scott"
+  - name: Rebecca Scott
     affiliation: The Ocean Foundation
 date: "`r Sys.Date()`"
 output:
@@ -26,3 +26,208 @@ This document describes the technical details of the management strategy evaluat
 
 This is a living document and will be continually updated as the project progresses.
 
+Currently the model uses NPSWO data through 2021.Life-history parameters and other technical specifications of the model (documented below) have not been reviewed by the ISC or other interested stakeholders, and may be revised and updated once the initial framework has been reviewed.
+
+# Data
+
+The operating models have been conditioned using the same data used in the most recent stock assessment, conducted in 2023 with data up to 2021 [@isc2023].
+
+## Catch
+
+The NPSWO catches have been organized into 19 fleets (Table \@ref(tab:catch-table); Figure \@ref(fig:catch-plot)).
+
+```{r catch-table}
+
+CatchFleetDF <- data.frame(Fleet=1:19,
+                           Fleet.Name= c(
+                             'JPN_WCPNO_OSDWLL_Late_Area1', 'TWN_WCNPO_DWLL_Late', 'US_WCNPO_LL_Shallow_Late', 'IATTC',   'JPN_EPO_OSDWLL', 'JPN_WCNPO_OSDWLL_Early_Area1', 'JPN_WCNPO_CODF', 'US_WCNPO_LL_Shallow_Early', 'US_WCNPO_LL_Deep', 'JPN_WCNPO_OSDF', 'JPN_WCNPO_Other_Early', 'JPN_WCNPO_Other_Late', 'TWN_WCNPO_DWLL_Early', 'TWN_WCNPO_Other', 'US_WCNPO_GN', 'US_WCNPO_Other', 'JPN_WCNPO_OSDWLL_Early_Area2', 'JPN_WCNPO_OSDWLL_Late_Area2', 'WCPFC'),
+                           `Time Period`= c(
+                             '1994 -- 2021',
+                             '2000 -- 2021',
+                             '2004 -- 2021',
+                             '1975 -- 2021',
+                             '1975 -- 2016',
+                             '1975 -- 1993',
+                             '1993 -- 2021',
+                             '1996 -- 2001',
+                             '1996 -- 2021',
+                             '1975 -- 1992',
+                             '1975 -- 1993',
+                             '1994 -- 2021',
+                             '1975 -- 1999',
+                             '2001 -- 2021',
+                             '1981 -- 2021',
+                             '1975 -- 2021',
+                             '1975 -- 1993',
+                             '1994 -- 2021',
+                             '1975 -- 2021')
+                           
+                           )
+
+knitr::kable(CatchFleetDF, caption = "The nineteen fleets used for the NPSWO catch data.", format = "html") |>
+  kableExtra::kable_styling(full_width = F)
+
+
+```
+
+```{r catch-plot, fig.cap='Time series plot of the NPSWO catch data by fleet.', fig.height=4.5, fig.width=8}
+
+library(ggplot2)
+
+# RCMData <- readRDS('../Condition/RCM/SALB.rcmdata') # NEED TO UPDATE to read in Hist file???
+
+Catch <- Array2DF(Data$`1`$`Female Male`@Landings@Value)
+Catch$Year <- as.numeric(Catch$Year)
+
+ggplot(CatchDF, aes(x=Year, y=Value)) +
+  facet_wrap(~Fleet) +
+  geom_line() +
+  expand_limits(y=0) +
+  theme_bw()
+#NEED TO EDIT TO MAKE PLOT TITLES AND X AXIS FIT
+
+
+```
+
+## Indices
+
+Eight indices of abundance were considered in the 2023 NPSWO assessment; indices 5 & 8 were ultimately excluded from the base model (Table \@ref(tab:index-table); Figure \@ref(fig:index-plot)).
+
+```{r index-table}
+
+IndexFleetDF <- data.frame(Index=c(1:8),
+                           Fleet.Name= c(
+                             'JPN_WCNPO_OSDWLL_Early_Area2',
+                             'JPN_WCNPO_OSDWLL_Late_Area2',
+                             'JPN_WCNPO_OSDWLL_Early_Area1', 
+                             'JPN_WCNPO_OSDWCOLL_Late_Area1',
+                             'TWN_WCNPO_DWLL_Late',
+                             'US_WCNPO_LL_Deep',
+                             'US_WCNPO_LL_Shallow_Early',
+                             'US_WCNPO_LL_Shallow_Late'),
+                           `Time Period`= c(
+                             '1975 -- 1993',
+                             '1994 -- 2021',
+                             '1975 -- 1993',
+                             '1994 -- 2021',
+                             '2000 -- 2021',
+                             '1996 -- 2021',
+                             '1996 -- 2001',
+                             '2004 -- 2021')
+                           
+                           )
+
+knitr::kable(IndexFleetDF, caption = "The eight indices of abundance; indices 5 & 8 were ultimately excluded from the base model.",
+             format = "html") |>
+  kableExtra::kable_styling(full_width = F)
+```
+
+```{r index-plot, fig.cap='Time series plot of the NPSWO index data by fleet; indices 5 & 8 were ultimately excluded from the base model.', warning=FALSE, fig.height=2.5, fig.width=8}
+
+# NEEDS TO BE UPDATED
+# Indices <- array2DF(RCMData@Index, 'Index') #UPDATE
+# Indices$Year <- as.numeric(Indices$Year)
+# 
+# Indices <- Indices |> #UPDATE
+#   dplyr::group_by(Fleet) |>
+#   dplyr::mutate(Index=Index/mean(Index, na.rm=TRUE))
+#   
+# 
+# ggplot(Indices, aes(x=Year, y=Index)) +
+#   facet_wrap(~Fleet, scales='free_y') +
+#   geom_line() +
+#   expand_limits(y=0)+
+#   theme_bw()
+
+```
+
+## Composition Data
+
+Catch-at-length data was aggregated from seven fleets (fleets 1-4, 6-8). (Figure \@ref(fig:cal-plot))
+
+```{r cal-plot, fig.height=6, fig.width=8, message=FALSE, warning=FALSE, fig.cap='Length composition data for the 7 fleets. The catch-at-length data has been summed over all years and standardized by dividing by total number of samples (n) for each fleet.'}
+
+##NEEDS TO BE UPDATED
+# CAL <- array2DF(RCMData@CAL, 'CAL')  #UPDATE
+# CAL$Year <- as.numeric(CAL$Year)
+# CAL$Class <- as.numeric(CAL$Class)
+# 
+# CAL <- CAL |> #UPDATE
+#   dplyr::group_by(Fleet) |>
+#   dplyr::filter(is.na(CAL)==FALSE, CAL>0.01) |>
+#   dplyr::group_by(Fleet, Class) |>
+#   dplyr::summarise(CAL=sum(CAL)) |>
+#   dplyr::group_by(Fleet) |>
+#   dplyr::mutate(n=sum(CAL), CAL=CAL/n) 
+#   
+# CALn <- CAL |> dplyr::group_by(Fleet) |>
+#   dplyr::summarise(n=format(unique(n), big.mark=",", scientific=FALSE),
+#                    Class=min(Class))
+
+# ggplot(CAL) +
+#   facet_wrap(~Fleet, scales='free_y') +
+#   geom_line(linewidth=0.8, aes(x=Class, y=CAL)) +
+#   expand_limits(y=0)+
+#   geom_text(data=CALn, aes(x=-Inf, y=0.5* Inf, label=paste('n = ', n)), hjust=-0.1, vjust=1) +
+#   theme_bw() +
+#   labs(x='Length Class (cm)',
+#        y='Relative Number')
+
+```
+
+# Base Life-History Parameters
+
+Table \@ref(tab:LH-base-case) shows the base case values of the life history parameters.
+
+```{r LH-base-case}
+
+LHBaseCase <- data.frame(Parameter=c(
+  '$M$', 
+  '$L @ A_min$', #unsure if this syntax will translate correctly
+  '$L @ A_max$', #unsure if this syntax will translate correctly
+  '$K$',
+  '$a$',
+  '$b$',
+  '$L_{50}$',
+  '$h$',
+  '$\\sigma_R$'
+  ),
+  Description=c(
+    'Natural mortality rate (age-specific)',
+    'Length at minimum age (0.5)',
+    'Length at maximum age (15)',
+    'growth coefficient',
+    'length-weight relationship; average weight at L=1',
+    'length-weight relationship exponent',
+    'Length corresponding with 50% probability of maturity',
+    'Steepness of Beverton-Holt SRR',
+    'Standard deviation of the log-normally distributed recruitment deviations'
+  ),
+  Value.Female=c('0.42(0), 0.37(1), 0.32(2), 0.27(3), 0.22(4+)', 
+          L_Amin_mu_f,
+          L_Amax_mu_f,
+          K_mu_f,
+          as.character(signif(Wa_mu,3)),
+          Wb_mu,
+          L50_mu,
+          h_mu,
+          PE_mu),
+    Value.Male=c('0.4(0), 0.38(1), 0.37(2), 0.37(3), 0.37(4), 0.37(5), 0.36(6+)',
+          L_Amin_mu_m,
+          L_Amax_mu_m,
+          K_mu_m,
+          as.character(signif(Wa_mu,3)),
+          Wb_mu,
+          '--', #only have value for females
+          h_mu,
+          PE_mu),
+  Reference=c('@kapur2017', '@demartini2007', '@demartini2007', '@demartini2007', '@demartini2007',
+              '@demartini2007', '@kapur2017', '@brodziak2020', 'Assumed')
+)
+
+knitr::kable(LHBaseCase, caption = "Life history parameters for the Base Case Operating Model",
+             format = "html",
+             digits=2) |>
+  kableExtra::kable_styling(full_width = T)
+
+```
