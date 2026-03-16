@@ -19,6 +19,7 @@ RoxygenNote: 7.3.3
 Depends:
     R (>= 4.1.0),
     MSEtool (>= 4.0.0),
+    rfishbase (>= 3.1.9.99)
 Imports: 
     cli,
     FishLife,

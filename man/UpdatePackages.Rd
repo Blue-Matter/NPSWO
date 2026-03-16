@@ -20,32 +20,22 @@ only missing packages are installed.}
 }
 \description{
 \code{UpdatePackages()} ensures that the required GitHub-hosted packages
-(\code{MSEtool} and \code{NPSWO}) are installed. If \code{update = TRUE}, already-installed
-packages are also passed to \code{pak::pkg_install()}, which will upgrade them if
-the GitHub source has newer changes. \code{CheckPak()} is a helper that ensures
-the \href{https://pak.r-lib.org/}{\code{pak}} package is available, installing it
+(\code{MSEtool}, \code{rfishbase}, \code{FishLife}, and \code{NPSWO}) are installed. If
+\code{update = TRUE}, already-installed packages are also passed to
+\code{pak::pkg_install()}, which will upgrade them if the GitHub source has
+newer changes. \code{CheckPak()} is a helper that ensures the
+\href{https://pak.r-lib.org/}{\code{pak}} package is available, installing it
 from CRAN if necessary.
 }
 \details{
 Installation sources:
 \itemize{
-\item \code{MSEtool} — \code{blue-matter/MSEtool@prelease}
-\item \code{NPSWO}   — \code{blue-matter/NPSWO}
+\item \code{MSEtool}   — \code{blue-matter/MSEtool@prelease}
+\item \code{rfishbase} — \code{ropensci/rfishbase@fb-21.06} (v3.1.9.99, required by FishLife)
+\item \code{FishLife}  — \code{James-Thorson-NOAA/FishLife}
+\item \code{NPSWO}     — \code{blue-matter/NPSWO}
 }
 
 Both functions return \code{NULL} invisibly and are called for their
 side effects only.
-}
-\examples{
-\dontrun{
-# Install missing packages and update any that have changed upstream
-UpdatePackages()
-
-# Install missing packages only, skip update check
-UpdatePackages(update = FALSE)
-
-# Ensure pak is available
-CheckPak()
-}
-
 }
