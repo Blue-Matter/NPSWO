@@ -250,3 +250,4 @@ p2 <- ggplot(L, aes(x = Year, y = Value, color = MP)) +
 patchwork::wrap_plots(p2, p1, widths = c(0.95, 1))
 
 ggsave("../NPSWO/Figures/Projection.png", width = 10, height = 4)
+
