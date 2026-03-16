@@ -6,7 +6,7 @@
 \usage{
 RunSS(
   SS_path,
-  exe_path = "Condition",
+  exe_path = NULL,
   exe = "ss3.exe",
   args = "-nohess",
   stdout = FALSE,
@@ -17,11 +17,8 @@ RunSS(
 \item{SS_path}{Character. Path to the simulation directory containing SS3
 input files (as written by \code{\link[=WriteSSFiles]{WriteSSFiles()}}).}
 
-\item{exe_path}{Character. Directory containing the SS3 executable.
-Default: \code{"Condition"}.}
-
-\item{exe}{Character. Name of the SS3 executable file.
-Default: \code{"ss3.exe"}.}
+\item{exe_path}{Character. Full path including fill name to the SS3 executable.
+Default: \code{ss3.exe} included in the \code{NPSWO} package.}
 
 \item{args}{Character. Command-line arguments passed to the executable.
 Default: \code{"-nohess"}. Set to \code{character(0)} to run with

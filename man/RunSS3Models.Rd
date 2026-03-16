@@ -4,15 +4,16 @@
 \alias{RunSS3Models}
 \title{Run SS3 Models Across Simulation Directories}
 \usage{
-RunSS3Models(path, exe_path = "Condition", parallel = TRUE, nmax = NULL)
+RunSS3Models(OM_Name, outdir = "Condition", parallel = TRUE, nmax = NULL)
 }
 \arguments{
-\item{path}{Character. Parent directory containing numbered SS3
+\item{OM_Name}{Character. Parent directory containing numbered SS3
 simulation subdirectories (as created by
 \code{\link[=CreateSSDirectories]{CreateSSDirectories()}}).}
 
-\item{exe_path}{Character. Directory containing the SS3 executable.
-Default: \code{"Condition"}.}
+\item{outdir}{Character. Path to the root conditioning directory
+where simulation subdirectories are stored (as created by
+\code{\link[=CreateSSDirectories]{CreateSSDirectories()}}). Default: "Condition"}
 
 \item{parallel}{Logical. If \code{TRUE}, runs are distributed across workers
 using \code{\link[furrr:future_map]{furrr::future_map()}}. Requires a \code{future} plan to
@@ -25,7 +26,7 @@ Default: \code{NULL} (run all).}
 }
 \value{
 Invisibly returns \code{NULL}. SS3 output is written to each simulation
-subdirectory of \code{path}.
+subdirectory of \code{file.path(outdir, OM_Name)}.
 }
 \description{
 Iterates over all subdirectories in \code{path} and executes an SS3 model in

@@ -30,12 +30,11 @@
 UpdatePackages <- function(update = TRUE) {
 
   msetool_installed   <- requireNamespace("MSEtool",   quietly = TRUE)
-  rfishbase_installed <- requireNamespace("rfishbase", quietly = TRUE)
+
   fishlife_installed  <- requireNamespace("FishLife",  quietly = TRUE)
   npswo_installed     <- requireNamespace("NPSWO",     quietly = TRUE)
 
-  needs_install <- !msetool_installed || !rfishbase_installed ||
-    !fishlife_installed || !npswo_installed || update
+  needs_install <- !msetool_installed || !fishlife_installed || !npswo_installed || update
 
 
   if (needs_install) {
@@ -44,11 +43,6 @@ UpdatePackages <- function(update = TRUE) {
 
     if (!msetool_installed || update)
       results$msetool <- pak::pkg_install("blue-matter/MSEtool@prelease", ask = FALSE)
-
-    # rfishbase must be installed before FishLife and NPSWO to ensure the
-    # correct version (3.1.9.99) is used rather than the CRAN version
-    if (!rfishbase_installed || update)
-      results$rfishbase <- pak::pkg_install("ropensci/rfishbase@fb-21.06", ask = FALSE)
 
     if (!fishlife_installed || update)
       results$fishlife <- pak::pkg_install("James-Thorson-NOAA/FishLife", ask = FALSE)

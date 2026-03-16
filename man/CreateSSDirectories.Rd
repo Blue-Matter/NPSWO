@@ -7,7 +7,7 @@
 CreateSSDirectories(
   OM_Name,
   ssdir,
-  outdir,
+  outdir = "Condition",
   StochasticValues,
   datfile = "swo2023_v004.dat",
   ctlfile = "swo2023_v007.ctl",
@@ -28,7 +28,7 @@ containing input files.}
 where simulation subdirectories will be created.}
 
 \item{StochasticValues}{Data frame. Each row contains one set of sampled
-life-history parameters (e.g. from \code{LHSamples.csv}).}
+life-history parameters (see \code{\link[=Generate_LH_Samples]{Generate_LH_Samples()}}).}
 
 \item{datfile}{Character. Name of the SS3 data file.
 Default: \code{"swo2023_v004.dat"}.}

@@ -2,6 +2,8 @@
 
 export(CheckPak)
 export(CreateSSDirectories)
+export(Generate_LH_Samples)
+export(ImportRepList)
 export(RunSS)
 export(RunSS3Models)
 export(UpdatePackages)

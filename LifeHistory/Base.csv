@@ -1,0 +1,4 @@
+﻿Par,Mean,SD,Stock,Comment
+M,0.22,0.1,Female,
+M,0.36,0.1,Male,
+CR,36,0.25,,converted to compensation ratio with MSEtool::h2CR(0.9)
