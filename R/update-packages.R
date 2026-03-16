@@ -1,7 +1,7 @@
 #' Load and Update Required Packages
 #'
 #' @description
-#' `LoadPackages()` ensures that the required GitHub-hosted packages
+#' `UpdatePackages()` ensures that the required GitHub-hosted packages
 #' (`MSEtool` and `NPSWO`) are installed. If `update = TRUE`, already-installed
 #' packages are also passed to `pak::pkg_install()`, which will upgrade them if
 #' the GitHub source has newer changes. `CheckPak()` is a helper that ensures
@@ -26,34 +26,39 @@
 #' @examples
 #' \dontrun{
 #' # Install missing packages and update any that have changed upstream
-#' LoadPackages()
+#' UpdatePackages()
 #'
 #' # Install missing packages only, skip update check
-#' LoadPackages(update = FALSE)
+#' UpdatePackages(update = FALSE)
 #'
 #' # Ensure pak is available
 #' CheckPak()
 #' }
 #'
-#' @name LoadPackages
+#' @name UpdatePackages
 #' @export
-LoadPackages <- function(update = TRUE) {
+UpdatePackages <- function(update = TRUE) {
 
   msetool_installed <- requireNamespace("MSEtool", quietly = TRUE)
   npswo_installed   <- requireNamespace("NPSWO",   quietly = TRUE)
-
   needs_install <- !msetool_installed || !npswo_installed || update
 
   if (needs_install) {
     CheckPak()
-    if (!msetool_installed || update) pak::pkg_install("blue-matter/MSEtool@prelease")
-    if (!npswo_installed   || update) pak::pkg_install("blue-matter/NPSWO")
+    if (!msetool_installed || update) pak::pkg_install("blue-matter/MSEtool@prelease", ask = FALSE)
+    if (!npswo_installed   || update) pak::pkg_install("blue-matter/NPSWO", ask = FALSE)
+
+    if (rstudioapi::isAvailable()) {
+      rstudioapi::restartSession(command = "{library(NPSWO) }")
+    } else {
+      cli::cli_alert_warning("Packages updated. Please restart your R session manually. Please restart your R session and run library(NPSWO).")
+    }
   }
 
   invisible(NULL)
 }
 
-#' @rdname LoadPackages
+#' @rdname UpdatePackages
 #' @export
 CheckPak <- function() {
   if (!requireNamespace("pak", quietly = TRUE)) install.packages("pak")

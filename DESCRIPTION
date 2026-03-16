@@ -25,7 +25,8 @@ Imports:
     future,
     progressr,
     purrr,
-    r4ss
+    r4ss,
+    rstudioapi
 Remotes:
     blue-matter/MSEtool@prelease,
     r4ss/r4ss
