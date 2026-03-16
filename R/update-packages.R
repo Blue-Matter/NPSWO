@@ -45,13 +45,21 @@ UpdatePackages <- function(update = TRUE) {
 
   if (needs_install) {
     CheckPak()
-    if (!msetool_installed || update) pak::pkg_install("blue-matter/MSEtool@prelease", ask = FALSE)
-    if (!npswo_installed   || update) pak::pkg_install("blue-matter/NPSWO", ask = FALSE)
+    results <- list()
+    if (!msetool_installed || update)
+      results$msetool <- pak::pkg_install("blue-matter/MSEtool@prelease", ask = FALSE)
+    if (!npswo_installed || update)
+      results$npswo <- pak::pkg_install("blue-matter/NPSWO", ask = FALSE)
 
-    if (rstudioapi::isAvailable()) {
-      rstudioapi::restartSession(command = "library(NPSWO)")
-    } else {
-      cli::cli_alert_warning("Packages updated. Please restart your R session manually. Please restart your R session and run library(NPSWO).")
+    all_results <- do.call(rbind, results)
+    was_updated <- !is.null(all_results) && any(all_results$action %in% c("Install", "Update"))
+
+    if (was_updated) {
+      if (rstudioapi::isAvailable()) {
+        rstudioapi::restartSession(command = "library(NPSWO)")
+      } else {
+        cli::cli_alert_warning("Packages updated. Please restart your R session and run `library(NPSWO)`.")
+      }
     }
   }
 
