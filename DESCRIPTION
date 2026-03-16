@@ -31,5 +31,6 @@ Imports:
     tmvtnorm
 Remotes:
     blue-matter/MSEtool@prelease,
+    ropensci/rfishbase@fb-21.06,
     James-Thorson-NOAA/FishLife,
     r4ss/r4ss
