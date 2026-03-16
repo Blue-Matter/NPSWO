@@ -1,0 +1,31 @@
+Package: NPSWO
+Title: MSE Framework for North Pacific Swordfish
+Version: 0.0.0.9000
+Authors@R: 
+    c(person("Adrian", "Hordyk", , "adrian@bluematterscience.com", role = c("aut", "cre")),
+    person("Rebecca", "Scott", , "rscott@bluematterscience.com", role = c("aut")))
+Description: A framework for conducting Management Strategy Evaluation (MSE)
+    for North Pacific swordfish (Xiphias gladius). Built on the openMSE
+    ecosystem, with MSEtool serving as the primary MSE engine. The package
+    provides functions specific to the North Pacific swordfish MSE, including
+    operating model conditioning, stochastic life-history parameter sampling,
+    and Stock Synthesis 3 (SS3) model setup and execution. The root directory
+    of the GitHub repository contains all code required to reproduce the
+    MSE.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.1.0),
+    MSEtool
+Imports: 
+    cli,
+    furrr,
+    future,
+    progressr,
+    purrr,
+    r4ss
+Remotes:
+    blue-matter/MSEtool,
+    r4ss/r4ss

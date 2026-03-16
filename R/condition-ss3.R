@@ -1,0 +1,352 @@
+#' Create SS3 Directories with Stochastic Life-History Parameters
+#'
+#' Reads a base Stock Synthesis 3 (SS3) model, applies stochastic life-history
+#' parameters, and writes `nSim` simulation directories.
+#'
+#' @param OM_Name         Character. Name of the operating model; used as the
+#'                        output subdirectory name within `outdir`.
+#' @param ssdir           Character. Path to the base SS3 model directory
+#'                        containing input files.
+#' @param outdir          Character. Path to the root conditioning directory
+#'                        where simulation subdirectories will be created.
+#' @param StochasticValues Data frame. Each row contains one set of sampled
+#'                        life-history parameters (e.g. from `LHSamples.csv`).
+#' @param datfile         Character. Name of the SS3 data file.
+#'                        Default: `"swo2023_v004.dat"`.
+#' @param ctlfile         Character. Name of the SS3 control file.
+#'                        Default: `"swo2023_v007.ctl"`.
+#' @param starterfile     Character. Name of the SS3 starter file.
+#'                        Default: `"starter.ss"`.
+#' @param forecastfile    Character. Name of the SS3 forecast file.
+#'                        Default: `"forecast.ss"`.
+#' @param OffFleets       Integer vector or `NULL`. Fleet indices to turn off.
+#'                        Default: `NULL`.
+#' @param parallel        Logical. If `TRUE`, simulation directories are
+#'                        written in parallel.
+#'                        Requires a `future` plan to be set by the caller
+#'                        (see [MSEtool::SetupParallel()]).
+#'                        Default: `FALSE`.
+#'
+#' @return Invisibly returns the path to the output directory.
+#'
+#' @examples
+#' \dontrun{
+#' # Sequential
+#' CreateSSDirectories("OM_Base", ssdir="SS3/Base", outdir="Condition", LHSamples)
+#'
+#' # Parallel
+#' MSEtool::SetupParallel()
+#' CreateSSDirectories("OM_Base", ssdir="SS3/Base", outdir="Condition", LHSamples,
+#'                     parallel = TRUE)
+#' MSEtool::DisableParallel()
+#' }
+#'
+#' @seealso [WriteSSFiles()], [RunSS3Models()]
+#'
+#' @importFrom r4ss SS_readdat_3.30 SS_readctl_3.30 SS_readstarter SS_readforecast
+#' @importFrom cli cli_progress_bar cli_progress_update cli_progress_done cli_alert_success
+#' @importFrom furrr future_walk furrr_options
+#' @export
+CreateSSDirectories <- function(OM_Name,
+                                ssdir,
+                                outdir,
+                                StochasticValues,
+                                datfile      = 'swo2023_v004.dat',
+                                ctlfile      = 'swo2023_v007.ctl',
+                                starterfile  = 'starter.ss',
+                                forecastfile = 'forecast.ss',
+                                OffFleets    = NULL,
+                                parallel     = FALSE) {
+
+  # --- Validate inputs -------------------------------------------------------
+  if (!dir.exists(ssdir))
+    cli::cli_abort("Cannot find `ssdir`: {ssdir}")
+
+  if (!dir.exists(outdir))
+    cli::cli_abort("Cannot find `outdir`: {outdir}")
+
+  if (!is.data.frame(StochasticValues) || nrow(StochasticValues) == 0)
+    cli::cli_abort("`StochasticValues` must be a non-empty data frame.")
+
+  parallel <- MSEtool:::CheckParallel(parallel)
+
+  # --- Read base SS3 files ---------------------------------------------------
+  dat      <- r4ss::SS_readdat_3.30(file.path(ssdir, datfile),
+                                    verbose = FALSE)
+  ctl      <- r4ss::SS_readctl_3.30(file.path(ssdir, ctlfile),
+                                    datlist = dat,
+                                    verbose = FALSE)
+  starter  <- r4ss::SS_readstarter(file.path(ssdir, starterfile),
+                                   verbose = FALSE)
+  forecast <- r4ss::SS_readforecast(file.path(ssdir, forecastfile),
+                                    verbose = FALSE)
+
+  # --- Prepare output directory ----------------------------------------------
+  SS3OutDir <- file.path(outdir, OM_Name)
+  if (!dir.exists(SS3OutDir))
+    dir.create(SS3OutDir, recursive = TRUE)
+
+  nsim    <- nrow(StochasticValues)
+  sim_ids <- seq_len(nsim)
+
+  # --- Write simulation directories ------------------------------------------
+  if (parallel) {
+    cli::cli_alert_info(
+      "Writing {nsim} directories in parallel to {.path {SS3OutDir}}"
+    )
+
+    furrr::future_walk(
+      sim_ids,
+      \(i) WriteSSFiles(i, StochasticValues, SS3OutDir,
+                        dat, ctl, starter, forecast, OffFleets),
+      .options = furrr::furrr_options(seed = TRUE)
+    )
+
+  } else {
+    cli::cli_progress_bar(
+      format = "Writing {cli::pb_current}/{cli::pb_total} directories to {SS3OutDir}",
+      total  = nsim
+    )
+
+    for (i in sim_ids) {
+      WriteSSFiles(i, StochasticValues, SS3OutDir,
+                   dat, ctl, starter, forecast, OffFleets)
+      cli::cli_progress_update()
+    }
+
+    cli::cli_progress_done()
+  }
+
+  cli::cli_alert_success("Done. {nsim} directories written to {.path {SS3OutDir}}")
+  invisible(SS3OutDir)
+}
+
+
+#' Write SS3 Input Files for a Single Simulation
+#'
+#' Applies stochastic life-history parameters (natural mortality and steepness)
+#' for simulation `i` to a set of SS3 model objects, creates a numbered
+#' subdirectory, and writes all four SS3 input files to disk.
+#'
+#' @param i                Integer. Row index into `StochasticValues`;
+#'                         also determines the subdirectory name (zero-padded).
+#' @param StochasticValues Data frame. Sampled parameter sets with columns
+#'                         `M_female`, `M_male`, and `h`.
+#' @param SS3OutDir        Character. Parent directory in which the numbered
+#'                         simulation subdirectory will be created.
+#' @param dat              List. SS3 data object from `r4ss::SS_readdat_3.30()`.
+#' @param ctl              List. SS3 control object from `r4ss::SS_readctl_3.30()`.
+#' @param starter          List. SS3 starter object from `r4ss::SS_readstarter()`.
+#' @param forecast         List. SS3 forecast object from `r4ss::SS_readforecast()`.
+#' @param OffFleets        Integer vector or `NULL`. Fleet indices to
+#'                         deactivate by negating their year values in catch,
+#'                         length composition, and CPUE data. Default: `NULL`.
+#'
+#' @return Invisibly returns the path to the simulation subdirectory.
+#'
+#' @details
+#' Natural mortality vectors are rescaled relative to their terminal age value,
+#' preserving the age-varying shape while shifting the overall level to the
+#' sampled value. Steepness is applied to both the `INIT` and `PRIOR`
+#' fields of the `SR_BH_steep` parameter row.
+#'
+#' The starter is configured to use control file initial values
+#' (`init_values_src = 0`), suppress run display output, and disable the
+#' cumulative report. A minimum of one forecast year is enforced.
+#'
+#' @seealso [CreateSSDirectories()]
+#'
+#' @importFrom r4ss SS_writectl_3.30 SS_writedat_3.30 SS_writestarter SS_writeforecast
+#' @export
+WriteSSFiles <- function(i, StochasticValues, SS3OutDir, dat, ctl, starter, forecast,
+                         OffFleets = NULL) {
+
+  # --- Natural Mortality: preserve age-varying shape, shift overall level ----
+  scale_natM <- function(base_row, new_M) {
+    base_vec   <- as.numeric(base_row)
+    terminal_M <- base_vec[length(base_vec)]
+    new_M * (base_vec / terminal_M)
+  }
+
+  ctl$natM[1, ] <- scale_natM(ctl$natM[1, ], StochasticValues$M_female[i])
+  ctl$natM[2, ] <- scale_natM(ctl$natM[2, ], StochasticValues$M_male[i])
+
+  # --- Steepness -------------------------------------------------------------
+  ctl$SR_parms["SR_BH_steep", c("INIT", "PRIOR")] <- StochasticValues$h[i]
+
+  # --- Create zero-padded simulation subdirectory ----------------------------
+  sim_dir <- file.path(SS3OutDir, formatC(i, width = 3, flag = "0"))
+
+  if (dir.exists(sim_dir))
+    unlink(sim_dir, recursive = TRUE)
+  dir.create(sim_dir)
+
+  # --- Configure starter -----------------------------------------------------
+  starter$ctlfile            <- "control.ss"
+  starter$datfile            <- "data.ss"
+  starter$init_values_src    <- 0
+  starter$run_display_detail <- 0
+  starter$cumreport          <- 0
+
+  # --- Deactivate fleets (negate year values) --------------------------------
+  if (!is.null(OffFleets)) {
+    negate_fleet_years <- function(df, fleet_col, year_col, fleets) {
+      df[[year_col]][df[[fleet_col]] %in% fleets] <-
+        -abs(df[[year_col]][df[[fleet_col]] %in% fleets])
+      df
+    }
+    dat$catch   <- negate_fleet_years(dat$catch,   "fleet", "year", OffFleets)
+    dat$lencomp <- negate_fleet_years(dat$lencomp, "fleet", "year", OffFleets)
+    dat$CPUE    <- negate_fleet_years(dat$CPUE,    "index", "year", OffFleets)
+  }
+
+  # --- Write SS3 input files -------------------------------------------------
+  r4ss::SS_writectl_3.30(ctl,      file.path(sim_dir, "control.ss"),
+                         verbose = FALSE, overwrite = TRUE)
+  r4ss::SS_writedat_3.30(dat,      file.path(sim_dir, "data.ss"),
+                         verbose = FALSE, overwrite = TRUE)
+  r4ss::SS_writestarter(starter,   sim_dir,
+                        verbose = FALSE, overwrite = TRUE)
+
+  forecast$Nforecastyrs <- max(forecast$Nforecastyrs, 1L)
+  r4ss::SS_writeforecast(forecast, sim_dir,
+                         verbose = FALSE, overwrite = TRUE)
+
+  invisible(sim_dir)
+}
+
+
+#' Run SS3 Models Across Simulation Directories
+#'
+#' Iterates over all subdirectories in `path` and executes an SS3 model in
+#' each, either sequentially with a progress bar or in parallel via `furrr`.
+#'
+#' @param path      Character. Parent directory containing numbered SS3
+#'                  simulation subdirectories (as created by
+#'                  [CreateSSDirectories()]).
+#' @param exe_path  Character. Directory containing the SS3 executable.
+#'                  Default: `"Condition"`.
+#' @param parallel  Logical. If `TRUE`, runs are distributed across workers
+#'                  using [furrr::future_map()]. Requires a `future` plan to
+#'                  be active (see [MSEtool::SetupParallel()]).
+#'                  Default: `TRUE`.
+#' @param nmax      Integer or `NULL`. If provided, limits execution to the
+#'                  first `nmax` subdirectories. Useful for testing.
+#'                  Default: `NULL` (run all).
+#'
+#' @return Invisibly returns `NULL`. SS3 output is written to each simulation
+#'         subdirectory of `path`.
+#'
+#' @seealso [CreateSSDirectories()], [RunSS()]
+#'
+#' @importFrom purrr map
+#' @importFrom furrr future_map
+#' @importFrom progressr with_progress progressor
+#' @importFrom cli cli_inform cli_alert_success
+#' @export
+RunSS3Models <- function(path,
+                         exe_path = 'Condition',
+                         parallel = TRUE,
+                         nmax     = NULL) {
+
+  SS3Dirs <- list.dirs(path, recursive = FALSE)
+
+  if (!is.null(nmax))
+    SS3Dirs <- SS3Dirs[seq_len(min(length(SS3Dirs), nmax))]
+
+  parallel   <- MSEtool:::CheckParallel(parallel)
+  n_dirs     <- length(SS3Dirs)
+  start_time <- proc.time()[["elapsed"]]
+
+  if (!parallel) {
+    purrr::map(
+      SS3Dirs,
+      \(SS_path) RunSS(SS_path, exe_path),
+      .progress = list(
+        format = "Running SS3 {cli::pb_current}/{cli::pb_total} {cli::pb_bar} {cli::pb_percent}"
+      )
+    )
+  } else {
+    cli::cli_inform("Starting parallel SS3 runs for {.val {n_dirs}} directories...")
+    progressr::with_progress({
+      p <- progressr::progressor(steps = n_dirs)
+      furrr::future_map(
+        SS3Dirs,
+        \(SS_path) {
+          result <- RunSS(SS_path, exe_path)
+          p()
+          result
+        },
+        .options = furrr::furrr_options(seed = TRUE)
+      )
+    })
+  }
+
+  elapsed <- round(proc.time()[["elapsed"]] - start_time, 1)
+  mins    <- floor(elapsed / 60)
+  secs    <- round(elapsed %% 60, 0)
+  cli::cli_alert_success(
+    "Completed {.val {n_dirs}} SS3 runs in {mins}m {secs}s \\
+    ({round(elapsed / n_dirs, 1)}s per run)"
+  )
+
+  invisible(NULL)
+}
+
+
+#' Run a Single SS3 Model
+#'
+#' Copies the SS3 executable into a simulation directory, runs the model, and
+#' removes the executable on exit. The working directory is restored safely via
+#' `on.exit()` regardless of success or failure.
+#'
+#' @param SS_path  Character. Path to the simulation directory containing SS3
+#'                 input files (as written by [WriteSSFiles()]).
+#' @param exe_path Character. Directory containing the SS3 executable.
+#'                 Default: `"Condition"`.
+#' @param exe      Character. Name of the SS3 executable file.
+#'                 Default: `"ss3.exe"`.
+#' @param args     Character. Command-line arguments passed to the executable.
+#'                 Default: `"-nohess"`. Set to `character(0)` to run with
+#'                 Hessian estimation.
+#' @param stdout   Logical or character. Passed to `system2()`. `FALSE`
+#'                 discards stdout; `TRUE` captures it as a character vector;
+#'                 a file path redirects output to disk. Default: `FALSE`.
+#' @param stderr   Logical or character. As `stdout`, but for stderr.
+#'                 Default: `FALSE`.
+#'
+#' @return Invisibly returns the integer exit code from `system2()`.
+#'   A non-zero value indicates the model run failed.
+#'
+#' @seealso [RunSS3Models()], [WriteSSFiles()]
+#' @export
+RunSS <- function(SS_path,
+                  exe_path = 'Condition',
+                  exe      = "ss3.exe",
+                  args     = "-nohess",
+                  stdout   = FALSE,
+                  stderr   = FALSE) {
+
+  exe_src  <- file.path(exe_path, exe)
+  exe_dest <- file.path(SS_path,  exe)
+
+  if (!file.exists(exe_src))
+    cli::cli_abort("SS3 executable not found: {exe_src}")
+
+  if (!dir.exists(SS_path))
+    cli::cli_abort("Simulation directory not found: {SS_path}")
+
+  old_wd <- getwd()
+
+  on.exit({
+    if (file.exists(exe_dest)) file.remove(exe_dest)
+    setwd(old_wd)
+  }, add = TRUE)
+
+  file.copy(exe_src, exe_dest, overwrite = TRUE)
+  setwd(SS_path)
+
+  exit_code <- system2(exe, args = args, stdout = stdout, stderr = stderr)
+
+  invisible(exit_code)
+}
