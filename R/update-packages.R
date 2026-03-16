@@ -49,7 +49,7 @@ UpdatePackages <- function(update = TRUE) {
     if (!npswo_installed   || update) pak::pkg_install("blue-matter/NPSWO", ask = FALSE)
 
     if (rstudioapi::isAvailable()) {
-      rstudioapi::restartSession(command = "{library(NPSWO) }")
+      rstudioapi::restartSession(command = "library(NPSWO)")
     } else {
       cli::cli_alert_warning("Packages updated. Please restart your R session manually. Please restart your R session and run library(NPSWO).")
     }
