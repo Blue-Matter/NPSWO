@@ -79,7 +79,7 @@
 #'
 #' Samples <- Generate_LH_Samples(Parameters, nSim = 500, plot = TRUE)
 #' }
-#'
+#' @importFrom tmvtnorm rtmvnorm
 #' @export
 Generate_LH_Samples <- function(Parameters,
                                 Genus        = "Xiphias",

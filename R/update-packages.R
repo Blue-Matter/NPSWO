@@ -30,11 +30,12 @@
 UpdatePackages <- function(update = TRUE) {
 
   msetool_installed   <- requireNamespace("MSEtool",   quietly = TRUE)
-
   fishlife_installed  <- requireNamespace("FishLife",  quietly = TRUE)
   npswo_installed     <- requireNamespace("NPSWO",     quietly = TRUE)
+  npswo.om_installed     <- requireNamespace("NPSWO.OM", quietly = TRUE)
 
-  needs_install <- !msetool_installed || !fishlife_installed || !npswo_installed || update
+  needs_install <- !msetool_installed || !fishlife_installed || !npswo_installed ||
+    !npswo.om_installed || update
 
 
   if (needs_install) {
@@ -50,15 +51,17 @@ UpdatePackages <- function(update = TRUE) {
     if (!npswo_installed || update)
       results$npswo <- pak::pkg_install("blue-matter/NPSWO", ask = FALSE)
 
-    all_results <- do.call(rbind, results)
-    was_updated <- !is.null(all_results) && any(all_results$action %in% c("Install", "Update"))
+    if (!npswo.om_installed || update)
+      results$npswo.om <- pak::pkg_install("blue-matter/NPSWO.OM", ask = FALSE)
+
+    was_updated <- results$msetool$type[1] != 'installed' ||
+      results$fishlife$type[1] != 'installed' ||
+      results$npswo$type[1] != 'installed' ||
+      results$npswo.om$type[1] != 'installed'
 
     if (was_updated) {
-      if (rstudioapi::isAvailable()) {
-        rstudioapi::restartSession(command = "library(NPSWO)")
-      } else {
         cli::cli_alert_warning("Packages updated. Please restart your R session and run `library(NPSWO)`.")
-      }
+
     } else {
       cli::cli_alert_info("All packages are already up to date. No restart needed.")
     }

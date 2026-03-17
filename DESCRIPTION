@@ -27,7 +27,6 @@ Imports:
     progressr,
     purrr,
     r4ss,
-    rstudioapi,
     tmvtnorm
 Remotes:
     blue-matter/MSEtool@prelease,
