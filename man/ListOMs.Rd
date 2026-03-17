@@ -4,12 +4,12 @@
 \alias{ListOMs}
 \title{List Available OM Objects}
 \usage{
-ListOMs(source = c("local", "installed"), path = "../NPSWO.OM")
+ListOMs(source = c("installed", "local"), path = "../NPSWO.OM")
 }
 \arguments{
 \item{source}{Character. Where to look for OM objects. \code{"local"} searches
 the local repository copy at \code{path}; \code{"installed"} searches the installed
-NPSWO.OM package. Default: \code{"local"}.}
+NPSWO.OM package. Default: \code{"installed"}.}
 
 \item{path}{Character. Path to the root directory of the local NPSWO.OM
 repository. Only used when \code{source = "local"}.

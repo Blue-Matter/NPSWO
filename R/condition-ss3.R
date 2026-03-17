@@ -216,15 +216,22 @@ WriteSSFiles <- function(i, StochasticValues, SS3OutDir, dat, ctl, starter, fore
   }
 
   # Write SS3 input files
-  r4ss::SS_writectl_3.30(ctl,      file.path(sim_dir, "control.ss"),
+  r4ss::SS_writectl_3.30(ctl,
+                         file.path(sim_dir, "control.ss"),
                          verbose = FALSE, overwrite = TRUE)
-  r4ss::SS_writedat_3.30(dat,      file.path(sim_dir, "data.ss"),
+
+  r4ss::SS_writedat_3.30(dat,
+                         file.path(sim_dir, "data.ss"),
                          verbose = FALSE, overwrite = TRUE)
-  r4ss::SS_writestarter(starter,   sim_dir,
+
+  r4ss::SS_writestarter(starter,
+                        sim_dir,
                         verbose = FALSE, overwrite = TRUE)
 
   forecast$Nforecastyrs <- max(forecast$Nforecastyrs, 1L)
-  r4ss::SS_writeforecast(forecast, sim_dir,
+
+  r4ss::SS_writeforecast(forecast,
+                         sim_dir,
                          verbose = FALSE, overwrite = TRUE)
 
   invisible(sim_dir)

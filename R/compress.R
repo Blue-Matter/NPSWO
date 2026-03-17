@@ -18,83 +18,98 @@
 #' And for every observation model-fleet combination (where non-`NULL`):
 #' - `OM@Obs[[i]][[fl]]@Survey@Selectivity[[st]]`
 #'
-#' @param OM An [MSEtool::OM()] object.
+#' @param x An [MSEtool::om-class], [MSEtool::hist-class], or [MSEtool::mse-class] object.
 #'
-#' @return An [MSEtool::OM()] object with the affected array slots either
-#'   compressed or expanded.
+#' @return An object of the same class as `x` with the affected array slots
+#'   either compressed or expanded.
 #'
 #' @seealso [MSEtool::ReduceDims()], [MSEtool::Extend()],
 #'
 #' @name CompressExpand
 #' @aliases Compress Expand
 #' @export
-Compress <- function(OM) {
+Compress <- function(x) {
+  if (inherits(x, "om")) {
+    x <- CompressOM_(x)
+  } else if (inherits(x, "hist")) {
+    x@OM <- CompressOM_(x@OM)
+  } else if (inherits(x, "mse")) {
+    x@OM <- CompressOM_(x@OM)
+  } else {
+    cli::cli_abort("{.arg x} must be an {.cls om}, {.cls hist}, or {.cls mse} object.")
+  }
+  x
+}
+
+
+#' @rdname CompressExpand
+#' @export
+Expand <- function(x) {
+  if (inherits(x, "om")) {
+    x <- ExpandOM_(x)
+  } else if (inherits(x, "hist")) {
+    x@OM <- ExpandOM_(x@OM)
+  } else if (inherits(x, "mse")) {
+    x@OM <- ExpandOM_(x@OM)
+  } else {
+    cli::cli_abort("{.arg x} must be an {.cls om}, {.cls hist}, or {.cls mse} object.")
+  }
+  x
+}
+
+
+CompressOM_ <- function(OM) {
   nStock <- MSEtool::nStock(OM)
   nFleet <- MSEtool::nFleet(OM)
 
   for (st in seq_len(nStock)) {
     for (fl in seq_len(nFleet)) {
-      array <- OM@Fleet[[st]][[fl]]@Selectivity@MeanAtAge
-      OM@Fleet[[st]][[fl]]@Selectivity@MeanAtAge <- MSEtool::ReduceDims(array, IncYear=TRUE)
-
-      OM@Fleet[[st]][[fl]]@WeightFleet  <- MSEtool::ReduceDims(OM@Fleet[[st]][[fl]]@WeightFleet, IncYear=TRUE)
+      OM@Fleet[[st]][[fl]]@Selectivity@MeanAtAge <- MSEtool::ReduceDims(
+        OM@Fleet[[st]][[fl]]@Selectivity@MeanAtAge, IncYear = TRUE)
+      OM@Fleet[[st]][[fl]]@WeightFleet <- MSEtool::ReduceDims(
+        OM@Fleet[[st]][[fl]]@WeightFleet, IncYear = TRUE)
     }
   }
 
   for (i in seq_along(OM@Obs)) {
     for (fl in seq_along(OM@Obs[[i]])) {
-
       Sel <- OM@Obs[[i]][[fl]]@Survey@Selectivity
       if (is.null(Sel)) next
-
       for (st in seq_along(Sel)) {
-        Sel[[st]] <- MSEtool::ReduceDims(Sel[[st]], IncYear=TRUE)
+        Sel[[st]] <- MSEtool::ReduceDims(Sel[[st]], IncYear = TRUE)
       }
-
       OM@Obs[[i]][[fl]]@Survey@Selectivity <- Sel
     }
   }
-
   OM
 }
 
-#' @rdname CompressExpand
-#' @export
-Expand <- function(OM) {
-  nStock <- nStock(OM)
-  nFleet <- nFleet(OM)
-  nSim <- nSim(OM)
-  Years <- Years(OM,'H')
+
+ExpandOM_ <- function(OM) {
+  nStock <- MSEtool::nStock(OM)
+  nFleet <- MSEtool::nFleet(OM)
+  nSim   <- MSEtool::nSim(OM)
+  Years  <- MSEtool::Years(OM, 'H')
 
   for (st in seq_len(nStock)) {
     for (fl in seq_len(nFleet)) {
-      array <- OM@Fleet[[st]][[fl]]@Selectivity@MeanAtAge
-      OM@Fleet[[st]][[fl]]@Selectivity@MeanAtAge <- MSEtool::Extend(array,
-                                                           nSim=nSim,
-                                                           Years=Years,
-                                                           maintain_seasonal_pattern = FALSE)
-
-      OM@Fleet[[st]][[fl]]@WeightFleet  <- MSEtool::Extend(OM@Fleet[[st]][[fl]]@WeightFleet,
-                                                  nSim=nSim,
-                                                  Years=Years,
-                                                  maintain_seasonal_pattern = FALSE)
+      OM@Fleet[[st]][[fl]]@Selectivity@MeanAtAge <- MSEtool::Extend(
+        OM@Fleet[[st]][[fl]]@Selectivity@MeanAtAge,
+        nSim = nSim, Years = Years, maintain_seasonal_pattern = FALSE)
+      OM@Fleet[[st]][[fl]]@WeightFleet <- MSEtool::Extend(
+        OM@Fleet[[st]][[fl]]@WeightFleet,
+        nSim = nSim, Years = Years, maintain_seasonal_pattern = FALSE)
     }
   }
 
-
   for (i in seq_along(OM@Obs)) {
     for (fl in seq_along(OM@Obs[[i]])) {
-
       Sel <- OM@Obs[[i]][[fl]]@Survey@Selectivity
       if (is.null(Sel)) next
-
       for (st in seq_along(Sel)) {
         Sel[[st]] <- MSEtool::Extend(Sel[[st]],
-                            nSim=nSim,
-                            Years=Years,
-                            maintain_seasonal_pattern = FALSE)
+                                     nSim = nSim, Years = Years, maintain_seasonal_pattern = FALSE)
       }
-
       OM@Obs[[i]][[fl]]@Survey@Selectivity <- Sel
     }
   }

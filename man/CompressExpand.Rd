@@ -6,16 +6,16 @@
 \alias{Expand}
 \title{Compress and Expand OM Array Slots}
 \usage{
-Compress(OM)
+Compress(x)
 
-Expand(OM)
+Expand(x)
 }
 \arguments{
-\item{OM}{An \code{\link[MSEtool:OM]{MSEtool::OM()}} object.}
+\item{x}{An \link[MSEtool:om-class]{MSEtool::om}, \link[MSEtool:hist-class]{MSEtool::hist}, or \link[MSEtool:mse-class]{MSEtool::mse} object.}
 }
 \value{
-An \code{\link[MSEtool:OM]{MSEtool::OM()}} object with the affected array slots either
-compressed or expanded.
+An object of the same class as \code{x} with the affected array slots
+either compressed or expanded.
 }
 \description{
 \code{Compress()} reduces stochastic fleet and survey selectivity and weight

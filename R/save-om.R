@@ -1,9 +1,10 @@
 #' Save an OM Object to the NPSWO.OM Data Package
 #'
-#' Optionally compresses an [MSEtool::OM()] object via [Compress()], then writes
-#' it to the `data/` directory of the NPSWO.OM package as a compressed `.rda`
-#' file. The saved object name is used as the file name. An `OM_` prefix is
-#' added automatically if not already present.
+#' Optionally compresses an [MSEtool::om-class] object via [Compress()], then
+#' writes it to the `data/` directory of the NPSWO.OM package as a compressed
+#' `.rda` file. Optionally also saves a local copy as a `.om` file in
+#' `Objects/OM/`. An `OM_` prefix is added to `name` automatically if not
+#' already present.
 #'
 #' @param OM An [MSEtool::OM()] object.
 #' @param name Character. Name for the saved object and `.rda` file (e.g.
@@ -14,11 +15,18 @@
 #' @param compress Logical. Whether to call [Compress()] on the OM before
 #'   saving, reducing object size by dropping redundant array dimensions.
 #'   Default: `TRUE`.
+#'
+#' @param local Logical. Whether to also save a local copy as
+#'   `Objects/OM/<name>.om`. The directory is created if it does not exist.
+#'   Local files are ignored by git and must be generated locally.
+#'   Default: `TRUE`.
+#'
 #' @param overwrite Logical. Whether to overwrite an existing `.rda` file of
 #'   the same name. Default: `FALSE`.
 #'
 #' @return Invisibly returns `NULL`. Called for its side-effect of writing
-#'   `data/OM_<name>.rda` in the NPSWO.OM package.
+#'   `data/OM_<name>.rda` in the NPSWO.OM package, and optionally
+#'   `Objects/OM/<name>.om` locally.
 #'
 #' @seealso [Compress()], [usethis::use_data()], [withr::with_dir()]
 #'
@@ -26,7 +34,7 @@
 #' @importFrom usethis use_data
 #' @importFrom cli cli_abort
 #' @export
-SaveOM <- function(OM, name=NULL, path="../NPSWO.OM", compress=TRUE, overwrite = FALSE) {
+SaveOM <- function(OM, name, path="../NPSWO.OM", compress=TRUE, local=TRUE, overwrite = FALSE) {
 
   if (!inherits(OM, 'om'))
     cli::cli_abort("OM must be an {.cls MSEtool::om} object")
@@ -48,7 +56,6 @@ SaveOM <- function(OM, name=NULL, path="../NPSWO.OM", compress=TRUE, overwrite =
     OM <- Compress(OM)
   }
 
-
   assign(name, OM)
 
   cli::cli_progress_step("Saving {.val {name}} to {.path {file.path(path, 'data', paste0(name, '.rda'))}}")
@@ -59,6 +66,17 @@ SaveOM <- function(OM, name=NULL, path="../NPSWO.OM", compress=TRUE, overwrite =
       })
     }
   )
+
+
+  if (local) {
+    localpath <- "Objects/OM"
+    cli::cli_progress_step("Saving {.val {name}} to {.path {file.path(localpath, paste0(name, '.om'))}}")
+    if (!dir.exists(localpath))
+      dir.create(localpath, recursive = TRUE)
+    path <- file.path(localpath, paste0(name, '.om'))
+    MSEtool::Save(Hist, path, overwrite)
+  }
+
   cli::cli_progress_done()
 }
 
@@ -70,7 +88,7 @@ SaveOM <- function(OM, name=NULL, path="../NPSWO.OM", compress=TRUE, overwrite =
 #'
 #' @param source Character. Where to look for OM objects. `"local"` searches
 #'   the local repository copy at `path`; `"installed"` searches the installed
-#'   NPSWO.OM package. Default: `"local"`.
+#'   NPSWO.OM package. Default: `"installed"`.
 #' @param path Character. Path to the root directory of the local NPSWO.OM
 #'   repository. Only used when `source = "local"`.
 #'   Default: `"../NPSWO.OM"`.
@@ -81,7 +99,7 @@ SaveOM <- function(OM, name=NULL, path="../NPSWO.OM", compress=TRUE, overwrite =
 #'
 #' @importFrom cli cli_abort cli_inform
 #' @export
-ListOMs <- function(source = c("local", "installed"), path = "../NPSWO.OM") {
+ListOMs <- function(source = c("installed", "local"), path = "../NPSWO.OM") {
   source <- match.arg(source)
 
   if (source == "installed") {
@@ -104,7 +122,7 @@ ListOMs <- function(source = c("local", "installed"), path = "../NPSWO.OM") {
   files <- files[grepl("^OM_", files)]
   names <- gsub("^OM_", "", files)
 
-  cli::cli_inform("OM objects available in {.pkg NPSWO.OM} ({source}):")
+  cli::cli_text("OM objects available in {.pkg NPSWO.OM} ({source}):")
   cli::cli_bullets(stats::setNames(names, rep("*", length(names))))
 
   invisible(names)
