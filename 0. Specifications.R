@@ -1,4 +1,4 @@
-nSim <- 200 # number of stochastic SS3 runs per OM (i.e. ensemble size)
+nSim <- 200 # number of stochastic SS3 runs per OM
 
 # Stock meta-data passed to the OM object
 Name      <- "North Pacific Swordfish"
