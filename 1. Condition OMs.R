@@ -1,9 +1,11 @@
 # TODO
 # - OM diagnostics - identify and drop simulations that didn't converge or outliers
-# - do parallel for ImportSS
 # - confirm reloaded OMs have identical structure to saved
+
 # - fix issue with importing WCPO_only - need to drop those fleets from OM
+
 # - Combine fleets
+
 # - Run Historical and Save
 # - Develop CMPs
 # - Run MSEs and Save
@@ -32,12 +34,14 @@
 
 # ---- Initial Setup ----
 
-# Install the NPSWO package following the directions in README before running this script
+# Install the NPSWO package following the directions in README before running
+# this script
 library(NPSWO)
 
 # Check GitHub for package updates and reinstall if the remote has changed
 UpdatePackages()
 
+source("0. Specifications.R")
 
 ################################################################################
 ######                        1. Base Case OM                             ######
@@ -63,7 +67,6 @@ LH_Samples <- Generate_LH_Samples(Parameters = LH_Mean_SD_Base,
 Save(LH_Samples, "LifeHistory/Base.rds", overwrite = TRUE)
 
 OM_Name <- "Base"
-source("0. Specifications.R")
 
 ################################################################################
 #                                                                              #
@@ -71,8 +74,8 @@ source("0. Specifications.R")
 #                                                                              #
 ################################################################################
 
-# Create a numbered subdirectory for each of the nSim ensemble members,        #
-# copying the base SS3 model into each and substituting the sampled            #
+# Create a numbered subdirectory for each of the nSim ensemble members,
+# copying the base SS3 model into each and substituting the sampled
 # life-history parameters
 
 CreateSSDirectories(OM_Name,
@@ -90,10 +93,10 @@ RunSS3Models(OM_Name, parallel = TRUE)
 ################################################################################
 
 
-# Read the SS3 report files from all ensemble subdirectories into a list
+# Read the SS3 report files from all subdirectories into a list
 RepList <- ImportRepList(OM_Name)
 
-# Combine the ensemble of SS3 outputs into a single MSEtool OM object
+# Combine the SS3 outputs into a single MSEtool OM object
 # (this can take a few minutes depending on `nSim`)
 Base <- MSEtool::ImportSS(RepList,
                              Name  = Name,
@@ -128,6 +131,7 @@ LH_Samples <- readRDS("LifeHistory/Base.rds")
 CreateSSDirectories(OM_Name,
                     ssdir = ssdir_base,
                     StochasticValues = LH_Samples,
+                    OffFleets = c(4,5), #EPO fleets; F04_IATTC, F05_JPN_EPO_OSDWL
                     parallel = TRUE)
 
 # Execute all nSim SS3 models in parallel (this step is slow)
@@ -139,10 +143,10 @@ RunSS3Models(OM_Name, parallel = TRUE)
 #                                                                              #
 ################################################################################
 
-# Read the SS3 report files from all ensemble subdirectories into a list
+# Read the SS3 report files from all subdirectories into a list
 RepList <- ImportRepList(OM_Name)
 
-# Combine the ensemble of SS3 outputs into a single MSEtool OM object
+# Combine the SS3 outputs into a single MSEtool OM object
 # (this can take a few minutes depending on `nSim`)
 WCPO_only <- MSEtool::ImportSS(RepList,
                           Name  = Name,
@@ -150,13 +154,24 @@ WCPO_only <- MSEtool::ImportSS(RepList,
                           StockName = StockName,
                           Species = Species)
 
+
+
+# TODO - Drop the OffFleets from the OM object
+
 # Save the OM to the NPSWO.OM package
 SaveOM(WCPO_only, overwrite = TRUE)
 
 
 
+
 ##################### DEV ######################################################
 
+OM <- WCPO_only
+
+Hist <- Simulate(OM, DoRefLandings = FALSE, nSim=3)
+
+
+nFleet(OM)
 
 
 ListOMs()
