@@ -8,6 +8,7 @@
 # - Develop CMPs
 # - Run MSEs and Save
 # - Develop PM functions
+# - write readme for packages
 # - Update TS Doc & Project homepage
 
 
