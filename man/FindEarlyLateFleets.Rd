@@ -24,8 +24,8 @@ where:
 \itemize{
 \item The \strong{name} is the canonical base fleet name (the shortest name in the
 group, with the \verb{F\{n\}_} prefix and \code{early}/\code{late} token removed).
-\item The \strong{value} is a sorted integer vector of indices into \code{fleets}
-identifying the matching fleet entries.
+\item The \strong{value} is a character vector of the original fleet names from
+\code{fleets} that belong to the pair, sorted alphabetically.
 }
 
 Returns an empty list if no early/late pairs are found.
@@ -35,4 +35,8 @@ Given a character vector of fleet names, finds fleets that represent the
 same fishery but differ only by an \code{early} or \code{late} temporal tag, using
 fuzzy string matching to accommodate minor naming inconsistencies (e.g.
 \code{OSDWLL} vs \code{OSDWCOLL}).
+}
+\seealso{
+\code{\link[utils:adist]{utils::adist()}} for the underlying edit-distance computation,
+\code{\link[MSEtool:name-accessors]{MSEtool::FleetNames()}} to extract fleet names from an OM object.
 }
