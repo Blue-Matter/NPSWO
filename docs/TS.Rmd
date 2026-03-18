@@ -15,18 +15,25 @@ output:
     use_bookdown: yes
 urlcolor: blue
 always_allow_html: true
+bibliography: references.bib
 ---
 
 # Introduction
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+
+library(ggplot2)
+library(ggExtra)
+library(tidyr)
+nSim <- 200
+pYear <- 25
 ```
 
 This document describes the technical details of the management strategy evaluation (MSE) framework being developed for the North Pacific Swordfish (NPSWO) fishery.
 
 This is a living document and will be continually updated as the project progresses.
 
-Currently the model uses NPSWO data through 2021.Life-history parameters and other technical specifications of the model (documented below) have not been reviewed by the ISC or other interested stakeholders, and may be revised and updated once the initial framework has been reviewed.
+Currently the model uses NPSWO data through 2021. Life-history parameters and other technical specifications of the model (documented below) have not been reviewed by the ISC or other interested stakeholders, and may be revised and updated once the initial framework has been reviewed.
 
 # Data
 
@@ -36,7 +43,7 @@ The operating models have been conditioned using the same data used in the most 
 
 The NPSWO catches have been organized into 19 fleets (Table \@ref(tab:catch-table); Figure \@ref(fig:catch-plot)).
 
-```{r catch-table}
+```{r catch-table, echo=FALSE}
 
 CatchFleetDF <- data.frame(Fleet=1:19,
                            Fleet.Name= c(
@@ -70,21 +77,21 @@ knitr::kable(CatchFleetDF, caption = "The nineteen fleets used for the NPSWO cat
 
 ```
 
-```{r catch-plot, fig.cap='Time series plot of the NPSWO catch data by fleet.', fig.height=4.5, fig.width=8}
+```{r catch-plot, fig.cap='Time series plot of the NPSWO catch data by fleet.', fig.height=4.5, fig.width=8, echo=FALSE}
 
-library(ggplot2)
+OMData <- readRDS('../RS_OM_Objects/base.om') # NEED TO UPDATE to read in combined base case OM file?
 
-# RCMData <- readRDS('../Condition/RCM/SALB.rcmdata') # NEED TO UPDATE to read in Hist file???
+CatchDF <- array2DF(OMData@Data$`Female Male`@Landings@Value)
+CatchDF$Year <- as.numeric(CatchDF$Year)
 
-Catch <- Array2DF(Data$`1`$`Female Male`@Landings@Value)
-Catch$Year <- as.numeric(Catch$Year)
+levels(CatchDF$Fleet) <- c(1:19) #replacing long fleet names with fleet numbers
 
 ggplot(CatchDF, aes(x=Year, y=Value)) +
-  facet_wrap(~Fleet) +
+  facet_wrap(~Fleet, scales='free_y') +
+  scale_x_continuous(breaks=seq(1975,2021,15))+
+  ylab("Catch")+
   geom_line() +
-  expand_limits(y=0) +
   theme_bw()
-#NEED TO EDIT TO MAKE PLOT TITLES AND X AXIS FIT
 
 
 ```
@@ -93,7 +100,7 @@ ggplot(CatchDF, aes(x=Year, y=Value)) +
 
 Eight indices of abundance were considered in the 2023 NPSWO assessment; indices 5 & 8 were ultimately excluded from the base model (Table \@ref(tab:index-table); Figure \@ref(fig:index-plot)).
 
-```{r index-table}
+```{r index-table, echo=FALSE}
 
 IndexFleetDF <- data.frame(Index=c(1:8),
                            Fleet.Name= c(
@@ -122,69 +129,74 @@ knitr::kable(IndexFleetDF, caption = "The eight indices of abundance; indices 5 
   kableExtra::kable_styling(full_width = F)
 ```
 
-```{r index-plot, fig.cap='Time series plot of the NPSWO index data by fleet; indices 5 & 8 were ultimately excluded from the base model.', warning=FALSE, fig.height=2.5, fig.width=8}
+```{r index-plot, fig.cap='Time series plot of the NPSWO index data by fleet; indices 5 & 8 were ultimately excluded from the base model.', warning=FALSE, fig.height=4.5, fig.width=8, echo=FALSE}
 
-# NEEDS TO BE UPDATED
-# Indices <- array2DF(RCMData@Index, 'Index') #UPDATE
-# Indices$Year <- as.numeric(Indices$Year)
-# 
-# Indices <- Indices |> #UPDATE
-#   dplyr::group_by(Fleet) |>
-#   dplyr::mutate(Index=Index/mean(Index, na.rm=TRUE))
-#   
-# 
-# ggplot(Indices, aes(x=Year, y=Index)) +
-#   facet_wrap(~Fleet, scales='free_y') +
-#   geom_line() +
-#   expand_limits(y=0)+
-#   theme_bw()
 
-```
+Indices <- array2DF(OMData@Data$`Female Male`@Survey@Value) 
 
-## Composition Data
+Indices$Year <- as.numeric(Indices$Year)
+Indices$Fleet <- as.factor(Indices$Fleet)
+levels(Indices$Fleet) = c(1:8) #replacing long fleet names with fleet numbers
 
-Catch-at-length data was aggregated from seven fleets (fleets 1-4, 6-8). (Figure \@ref(fig:cal-plot))
+Indices <- Indices |> 
+  dplyr::group_by(Fleet) |>
+  dplyr::mutate(Value=Value/mean(Value, na.rm=TRUE))
+  
+Indices <- drop_na(Indices)
 
-```{r cal-plot, fig.height=6, fig.width=8, message=FALSE, warning=FALSE, fig.cap='Length composition data for the 7 fleets. The catch-at-length data has been summed over all years and standardized by dividing by total number of samples (n) for each fleet.'}
 
-##NEEDS TO BE UPDATED
-# CAL <- array2DF(RCMData@CAL, 'CAL')  #UPDATE
-# CAL$Year <- as.numeric(CAL$Year)
-# CAL$Class <- as.numeric(CAL$Class)
-# 
-# CAL <- CAL |> #UPDATE
-#   dplyr::group_by(Fleet) |>
-#   dplyr::filter(is.na(CAL)==FALSE, CAL>0.01) |>
-#   dplyr::group_by(Fleet, Class) |>
-#   dplyr::summarise(CAL=sum(CAL)) |>
-#   dplyr::group_by(Fleet) |>
-#   dplyr::mutate(n=sum(CAL), CAL=CAL/n) 
-#   
-# CALn <- CAL |> dplyr::group_by(Fleet) |>
-#   dplyr::summarise(n=format(unique(n), big.mark=",", scientific=FALSE),
-#                    Class=min(Class))
-
-# ggplot(CAL) +
-#   facet_wrap(~Fleet, scales='free_y') +
-#   geom_line(linewidth=0.8, aes(x=Class, y=CAL)) +
-#   expand_limits(y=0)+
-#   geom_text(data=CALn, aes(x=-Inf, y=0.5* Inf, label=paste('n = ', n)), hjust=-0.1, vjust=1) +
-#   theme_bw() +
-#   labs(x='Length Class (cm)',
-#        y='Relative Number')
+ggplot(Indices, aes(x=Year, y=Value)) +
+  facet_wrap(~Fleet, scales='free_y') +
+  scale_x_continuous(breaks=seq(1975,2021,15)) +
+  ylab("Index")+ ylim(c(0, (max(Indices$Value)+0.1))) +
+  geom_line() +
+  theme_bw()
 
 ```
+
+<!-- ## Composition Data -->
+
+<!-- Catch-at-length data was aggregated from seven fleets (fleets 1-4, 6-8). (Figure \@ref(fig:cal-plot)) -->
+
+<!-- ```{r cal-plot, fig.height=6, fig.width=8, message=FALSE, warning=FALSE, fig.cap='Length composition data for the 7 fleets. The catch-at-length data has been summed over all years and standardized by dividing by total number of samples (n) for each fleet.'} -->
+
+<!-- # NEED TO COME BACK TO THIS - ADRIAN HASN'T CODED THE AT SIZE SLOTS YET SO THEYRE EMPTY -->
+<!-- CAL <- array2DF(RCMData@CAL, 'CAL')  -->
+<!-- CAL$Year <- as.numeric(CAL$Year) -->
+<!-- CAL$Class <- as.numeric(CAL$Class) -->
+
+<!-- CAL <- CAL |> -->
+<!--   dplyr::group_by(Fleet) |> -->
+<!--   dplyr::filter(is.na(CAL)==FALSE, CAL>0.01) |> -->
+<!--   dplyr::group_by(Fleet, Class) |> -->
+<!--   dplyr::summarise(CAL=sum(CAL)) |> -->
+<!--   dplyr::group_by(Fleet) |> -->
+<!--   dplyr::mutate(n=sum(CAL), CAL=CAL/n)  -->
+
+<!-- CALn <- CAL |> dplyr::group_by(Fleet) |> -->
+<!--   dplyr::summarise(n=format(unique(n), big.mark=",", scientific=FALSE), -->
+<!--                    Class=min(Class)) -->
+
+<!-- ggplot(CAL) + -->
+<!--   facet_wrap(~Fleet, scales='free_y') + -->
+<!--   geom_line(linewidth=0.8, aes(x=Class, y=CAL)) + -->
+<!--   expand_limits(y=0)+ -->
+<!--   geom_text(data=CALn, aes(x=-Inf, y=0.5* Inf, label=paste('n = ', n)), hjust=-0.1, vjust=1) + -->
+<!--   theme_bw() + -->
+<!--   labs(x='Length Class (cm)', -->
+<!--        y='Relative Number') -->
+<!-- ``` -->
 
 # Base Life-History Parameters
 
 Table \@ref(tab:LH-base-case) shows the base case values of the life history parameters.
 
-```{r LH-base-case}
+```{r LH-base-case, echo=FALSE}
 
 LHBaseCase <- data.frame(Parameter=c(
   '$M$', 
-  '$L @ A_min$', #unsure if this syntax will translate correctly
-  '$L @ A_max$', #unsure if this syntax will translate correctly
+  '$L @ Amin$', 
+  '$L @ Amax$', 
   '$K$',
   '$a$',
   '$b$',
@@ -196,31 +208,31 @@ LHBaseCase <- data.frame(Parameter=c(
     'Natural mortality rate (age-specific)',
     'Length at minimum age (0.5)',
     'Length at maximum age (15)',
-    'growth coefficient',
-    'length-weight relationship; average weight at L=1',
-    'length-weight relationship exponent',
+    'Growth coefficient',
+    'Length-weight relationship; average weight at L=1',
+    'Length-weight relationship exponent',
     'Length corresponding with 50% probability of maturity',
     'Steepness of Beverton-Holt SRR',
     'Standard deviation of the log-normally distributed recruitment deviations'
   ),
   Value.Female=c('0.42(0), 0.37(1), 0.32(2), 0.27(3), 0.22(4+)', 
-          L_Amin_mu_f,
-          L_Amax_mu_f,
-          K_mu_f,
-          as.character(signif(Wa_mu,3)),
-          Wb_mu,
-          L50_mu,
-          h_mu,
-          PE_mu),
+          '80.1',
+          '226.3',
+          '0.246',
+          '1.30E-05',
+          '3.07',
+          '143.68',
+          '0.9',
+          '0.42'),
     Value.Male=c('0.4(0), 0.38(1), 0.37(2), 0.37(3), 0.37(4), 0.37(5), 0.36(6+)',
-          L_Amin_mu_m,
-          L_Amax_mu_m,
-          K_mu_m,
-          as.character(signif(Wa_mu,3)),
-          Wb_mu,
+          '83.2',
+          '206.4',
+          '0.271',
+          '1.30E-05',
+          '3.07',
           '--', #only have value for females
-          h_mu,
-          PE_mu),
+          '0.9',
+          '0.42'),
   Reference=c('@kapur2017', '@demartini2007', '@demartini2007', '@demartini2007', '@demartini2007',
               '@demartini2007', '@kapur2017', '@brodziak2020', 'Assumed')
 )
@@ -231,3 +243,101 @@ knitr::kable(LHBaseCase, caption = "Life history parameters for the Base Case Op
   kableExtra::kable_styling(full_width = T)
 
 ```
+
+# Uncertainties in Life-History Parameters
+
+The NPSWO MSE currently considers two axes of uncertainty in the life-history parameters (see [Base Life-History Parameters]):
+
+1.  Natural mortality (*M*)
+2.  Steepness of the Beverton-Holt stock-recruit relationship (*h*), converted to a compensation ratio (*CR*) (see [Stochastic Sampling])
+
+Additional uncertainties that could be considered for the life-history parameters include (but are not limited to): 
+
+1. Uncertainty in the von Bertalanffy growth parameters 
+2. Variation in the maturity parameters 
+3. Variation in the recruitment deviations
+
+The uncertainty in the continuous life-history parameters was handled using stochastic sampling of the life-history parameters from a multivariate distribution. While some MSE processes such as the NPALB MSE [@isc2021] have used a discrete uncertainty grid to capture uncertainty in life-history parameters, the stochastic sampling approach is much more computationally efficient and has the advantage that it can account for both down-weighting of less likely life-history parameters and correlations between life-history parameters.
+
+## Stochastic Sampling
+
+The *Stochastic Sampling* approach involved sampling `r nSim` values of the life-history parameters from a multivariate distribution, and running the OM Conditioning model (see next section) for each simulation. A single OM was then generated, incorporating the output of the `r nSim` fits to the data with the stochastic life-history parameters.
+
+The methodology for sampling the life-history parameters was based on the methodology developed by @taylor2024 for the Southern Atlantic Swordfish.
+
+The life-history parameters were assumed to be log-normally distributed (Table \@ref(tab:LH-stochastic)), and were sampled from a multivariate distribution truncated at 1.96 standard deviations. The truncation was used to exclude extreme values from the tails of the distribution. In this process, *h* values are converted internally to a compensation ratio, *CR*, which can take values from 0 - Inf, in order to complete the log transformation with the assumed coefficient of variation. Returned *CR* values are then back-converted to *h*.
+
+The covariance matrix for the multivariate distribution was generated by using the correlation between *M* and *h* reported by the FishLife package [@thorson2023] for *Xiphias gladius.*
+
+The mean base *M* values were taken from the most recent assessment (@isc2023) for the plus age group for females and males (4+ and 6+ respectively). Stchastically sampled *M* values for each simulation were then converted into age-specifc *M* for each sex, maintaining the original ratio between ages from the assessment.
+
+Figure \@ref(fig:stochastic-plot) shows a scatterplot and marginal histograms of the `r nSim` samples of the stochastic life-history parameters.
+
+```{r LH-stochastic, echo=FALSE}
+
+BaseLH <- read.csv('../LifeHistory/base.csv', head=TRUE)
+M_mu_f <- BaseLH[1,2]
+M_mu_m <- BaseLH[2,2]
+CR_mu <- BaseLH[3,2]
+M_sd_f <- BaseLH[1,3]
+M_sd_m <- BaseLH[2,3]
+CR_sd <- BaseLH[3,3]
+  
+LHStochastic <- data.frame(Parameter=c(
+  '$M female$',
+  '$M male$',
+  '$CR$'
+  ),
+  Mean=c(M_mu_f, M_mu_m, CR_mu),
+  SD=c(M_sd_f, M_sd_m, CR_sd)
+)
+
+knitr::kable(LHStochastic, caption = "The mean and standard deviation used to generate the stochastic life-history parameters. The mean *CR* is equivalent to *h* = 0.9.",
+             format = "html",
+             digits=2) |>
+  kableExtra::kable_styling(full_width = T)
+```
+
+```{r stochastic-plot-f, fig.cap='Scatterplot with marginal histograms of the samples of the stochastic life-history parameters for females.', fig.height=4.5, fig.width=4.5, echo=FALSE}
+
+Stochastic <- read.csv('../LifeHistory/LH_Samples.csv', head=TRUE)  
+
+p1 <- ggplot(Stochastic, aes(x=M_Female, y=h)) +
+  geom_point() +
+  theme_bw()
+
+ggExtra::ggMarginal(p1, type='histogram')
+```
+
+```{r stochastic-plot-m, fig.cap='Scatterplot with marginal histograms of the samples of the stochastic life-history parameters for males.', fig.height=4.5, fig.width=4.5, echo=FALSE}
+
+p2 <- ggplot(Stochastic, aes(x=M_Male, y=h)) +
+  geom_point() +
+  theme_bw()
+
+
+ggExtra::ggMarginal(p2, type='histogram')
+```
+
+# OM Conditioning
+
+The Operating Models were conditioned using the final base case [Stock Synthesis 3](https://nmfs-ost.github.io/ss3-website/) (SS3) model from the most recent NPSWO assessment (@isc2023). More details on the SS3 specifications and model diagnostics can be found [here](https://isc.fra.go.jp/pdf/ISC23/ISC23_ANNEX11-Stock_Assessment_Report_for_North_Pacific_Ocean_Swordfish_FINAL.pdf).
+
+The SS3 model is one-area, two-sex, and structured for quarterly time steps. While technically a single-area model, stock boundaries for the Western and Central North Pacific Ocean (WCPO) and North Eastern Pacific Ocean (EPO) swordfish stocks are treated implicitly using fleets as areas.
+
+The operating models had `r nSim` simulations and a `r pYear`-year projection period.
+
+## Reference Operating Models
+
+The Reference OMs spanned the primary uncertainties in the life-history parameters for this stock (see Section \@ref(uncertainties-in-life-history-parameters)).
+
+Reference OMs were generated using the *Stochastic Sampling* approach described above, which entailed running the SS3 model for each of the `r nSim` samples of the life-history parameters, and then generating a single OM with `r nSim` predictions of the historical fishery dynamics; i.e., a single OM that includes the stochastic variability in the life-history parameters.
+
+## Robustness Operating Models
+
+A preliminary set of robustness OMs have been developed using the *Stochastic Sampling* approach described above that represent only the WCPO stock; fleets from the EPO are turned off in this set of models. 
+
+Other potential Robustness OMs (e.g., climate  impacts) will be developed at a future date.
+
+
+# References
