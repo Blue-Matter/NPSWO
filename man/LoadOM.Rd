@@ -4,11 +4,19 @@
 \alias{LoadOM}
 \title{Load an OM Object from the NPSWO.OM Package}
 \usage{
-LoadOM(name)
+LoadOM(name, source = c("installed", "local"), path = "../NPSWO.OM")
 }
 \arguments{
 \item{name}{Character. Name of the OM to load (e.g. \code{"Base"} or
 \code{"OM_Base"}). The \code{OM_} prefix is added automatically if missing.}
+
+\item{source}{Character. Where to look for OM objects. \code{"local"} searches
+the local repository copy at \code{path}; \code{"installed"} searches the installed
+NPSWO.OM package. Default: \code{"installed"}.}
+
+\item{path}{Character. Path to the root directory of the local NPSWO.OM
+repository. Only used when \code{source = "local"}.
+Default: \code{"../NPSWO.OM"}.}
 }
 \value{
 An \code{\link[MSEtool:OM]{MSEtool::OM()}} object with array slots expanded to full

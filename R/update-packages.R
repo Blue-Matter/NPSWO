@@ -60,7 +60,8 @@ UpdatePackages <- function(update = TRUE) {
       results$npswo.om$type[1] != 'installed'
 
     if (was_updated) {
-        cli::cli_alert_warning("Packages updated. Please restart your R session and run `library(NPSWO)`.")
+      cli::cli_text('')
+      cli::cli_alert_warning("Packages updated. Please restart your R session and run `library(NPSWO)`.")
 
     } else {
       cli::cli_alert_info("All packages are already up to date. No restart needed.")

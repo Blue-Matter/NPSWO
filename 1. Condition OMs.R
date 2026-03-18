@@ -1,10 +1,7 @@
 # TODO
 # - OM diagnostics - identify and drop simulations that didn't converge or outliers
 # - confirm reloaded OMs have identical structure to saved
-
-# - fix issue with importing WCPO_only - need to drop those fleets from OM
-
-# - Combine fleets
+# - Combine fleets - TODO later
 
 # - Run Historical and Save
 # - Develop CMPs
@@ -105,7 +102,7 @@ Base <- MSEtool::ImportSS(RepList,
                              Species = Species)
 
 # Save the OM to the NPSWO.OM package
-SaveOM(Base, overwrite = TRUE)
+SaveOM(Base, OM_Name, overwrite = TRUE)
 
 
 ################################################################################
@@ -128,10 +125,12 @@ source("0. Specifications.R")
 
 LH_Samples <- readRDS("LifeHistory/Base.rds")
 
+OffFleets <- 4:5 #EPO fleets; F4_IATTC, F5_JPN_EPO_OSDWL
+
 CreateSSDirectories(OM_Name,
                     ssdir = ssdir_base,
                     StochasticValues = LH_Samples,
-                    OffFleets = c(4,5), #EPO fleets; F04_IATTC, F05_JPN_EPO_OSDWL
+                    OffFleets = OffFleets,
                     parallel = TRUE)
 
 # Execute all nSim SS3 models in parallel (this step is slow)
@@ -154,79 +153,15 @@ WCPO_only <- MSEtool::ImportSS(RepList,
                           StockName = StockName,
                           Species = Species)
 
+# Drop `OffFleets` from the OM object
+AllFleets <- FleetNames(WCPO_only, TRUE)
+KeepFleets <- AllFleets[-OffFleets]
+WCPO_only <- Subset(WCPO_only, Fleets=KeepFleets)
 
+# Save to NPSWO.OM package
+SaveOM(WCPO_only, OM_Name, overwrite = TRUE)
 
-# TODO - Drop the OffFleets from the OM object
-
-# Save the OM to the NPSWO.OM package
-SaveOM(WCPO_only, overwrite = TRUE)
-
-
-
-
-##################### DEV ######################################################
-
-OM <- WCPO_only
-
-Hist <- Simulate(OM, DoRefLandings = FALSE, nSim=3)
-
-
-nFleet(OM)
-
-
-ListOMs()
-Loaded <- LoadOM("Base")
-
-Hist <- Simulate(Base, DoRefLandings = FALSE)
-Hist2 <- Simulate(Loaded, DoRefLandings = FALSE)
-
-sim <- 200
-plot(Hist@SBiomass[sim,1,], type='l')
-lines(Hist2@SBiomass[sim,1,], col='blue')
-
-
-
-t = PopulateOM(OM2)
-
-OM2 <- CombineFleets(OM_Base, Names, Fleets)
-OM2 <- Populate(OM2)
-
-
-Hist <- Simulate(OM_Base, nSim=5, DoRefLandings = FALSE)
-Hist2 <- Simulate(OM2, nSim=5, DoRefLandings = FALSE)
-
-
-
-
-Hist@Biomass[1,1,]
-Hist2@Biomass[1,1,]
-
-
-
-
-
-
-Save(WCPO_only, "Objects_OM/WCPO_only.om")
-
-
-
-
-
-
-
-
-
-SetupParallel()
-SSDirs <- list.dirs(path, recursive=FALSE)
-RepList <- ImportSSReport(SSDirs[1:n], parallel = TRUE)
-
-WCPO_only <- ImportSS(RepList) |> CombineFleets(Names, Fleets)
-Save(WCPO_only, "Objects_OM/WCPO_only.om")
-
-
-
-
-
+LoadOM("WCPO_only")
 # Combine Fleet Info
 Names <- list("JPN_WCNPO_OSDWCOLL_Area1",
               "TWN_WCNPO_DWLL",

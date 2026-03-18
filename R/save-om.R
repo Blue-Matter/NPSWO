@@ -137,6 +137,13 @@ ListOMs <- function(source = c("installed", "local"), path = "../NPSWO.OM") {
 #' @param name Character. Name of the OM to load (e.g. `"Base"` or
 #'   `"OM_Base"`). The `OM_` prefix is added automatically if missing.
 #'
+#' @param source Character. Where to look for OM objects. `"local"` searches
+#'   the local repository copy at `path`; `"installed"` searches the installed
+#'   NPSWO.OM package. Default: `"installed"`.
+#' @param path Character. Path to the root directory of the local NPSWO.OM
+#'   repository. Only used when `source = "local"`.
+#'   Default: `"../NPSWO.OM"`.
+#'
 #' @return An [MSEtool::OM()] object with array slots expanded to full
 #'   `nSim x nYear` dimensions.
 #'
@@ -144,17 +151,56 @@ ListOMs <- function(source = c("installed", "local"), path = "../NPSWO.OM") {
 #'
 #' @importFrom utils data
 #' @export
-LoadOM <- function(name) {
+LoadOM <- function(name, source = c("installed", "local"), path = "../NPSWO.OM") {
+  source <- match.arg(source)
 
   if (!grepl("^OM_", name))
     name <- paste("OM", name, sep = "_")
 
-  cli::cli_progress_step("Loading {.val {name}}")
-  env <- new.env(parent = emptyenv())
-  utils::data(list = name, package = "NPSWO.OM", envir = env)
-  cli::cli_progress_step("Expanding {.val {name}}")
-  OM <- Expand(env[[name]])
+  if (source == "installed") {
+    if (!requireNamespace("NPSWO.OM", quietly = TRUE))
+      cli::cli_abort(c(
+        "x" = "Package {.pkg NPSWO.OM} is not installed.",
+        "i" = "Install it from {.url https://github.com/Blue-Matter/NPSWO.OM}."
+      ))
+    available <- utils::data(package = "NPSWO.OM")$results[, "Item"]
 
+    if (!name %in% available)
+      cli::cli_abort(c(
+        "x" = "{.val {name}} not found in {.pkg NPSWO.OM}.",
+        "i" = "Available OMs: {.val {available}}"
+      ))
+
+    cli::cli_progress_step("Loading {.val {name}}")
+    env <- new.env(parent = emptyenv())
+    utils::data(list = name, package = "NPSWO.OM", envir = env)
+    obj <- env[[name]]
+
+  } else {
+    data_dir <- file.path(path, "data")
+    if (!dir.exists(path))
+      cli::cli_abort(c(
+        "x" = "Path {.path {path}} not found.",
+        "i" = "Make sure {.arg path} points to the local copy of the {.pkg NPSWO.OM} package.",
+        "i" = "Clone from the GitHub repository {.url https://github.com/Blue-Matter/NPSWO.OM}."
+      ))
+    available <- tools::file_path_sans_ext(list.files(file.path(path, "data")))
+
+    if (!name %in% available)
+      cli::cli_abort(c(
+        "x" = "{.val {name}} not found in {.path {data_dir}}.",
+        "i" = "Available OMs: {.val {available}}"
+      ))
+
+    cli::cli_progress_step("Loading {.val {name}}")
+    rda_path <- file.path(data_dir, paste0(name, ".rda"))
+    env <- new.env(parent = emptyenv())
+    load(rda_path, envir = env)
+    obj <- env[[name]]
+  }
+
+  cli::cli_progress_step("Expanding {.val {name}}")
+  OM <- Expand(obj)
   cli::cli_progress_done()
   OM
 
