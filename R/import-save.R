@@ -48,10 +48,11 @@ Import_Save <- function(OM_Name, DropFleets = NULL) {
   # Combine the SS3 outputs into a single MSEtool OM object
   # (this can take a few minutes depending on `nSim`)
   OM <- MSEtool::ImportSS(RepList,
-                            Name  = Name,
-                            pYear = pYear,
-                            StockName = StockName,
-                            Species = Species)
+                          Name  = Name,
+                          nSim = nSim,
+                          pYear = pYear,
+                          StockName = StockName,
+                          Species = Species)
 
   MSEtool::Control(OM) <- ControlList
 

@@ -98,8 +98,10 @@ CreateSSDirectories <- function(OM_Name,
 
     furrr::future_walk(
       sim_ids,
-      \(i) WriteSSFiles(i, StochasticValues, SS3OutDir,
-                        dat, ctl, starter, forecast, OffFleets),
+      \(i) WriteSSFiles(SS3OutDir,
+                        dat, ctl, starter, forecast,
+                        i, StochasticValues,
+                        OffFleets),
       .options = furrr::furrr_options(seed = TRUE)
     )
 
@@ -110,8 +112,9 @@ CreateSSDirectories <- function(OM_Name,
     )
 
     for (i in sim_ids) {
-      WriteSSFiles(i, StochasticValues, SS3OutDir,
-                   dat, ctl, starter, forecast, OffFleets)
+      WriteSSFiles(SS3OutDir,
+                   dat, ctl, starter, forecast,
+                   i, StochasticValues, OffFleets)
       cli::cli_progress_update()
     }
 
@@ -129,9 +132,6 @@ CreateSSDirectories <- function(OM_Name,
 #' for simulation `i` to a set of SS3 model objects, creates a numbered
 #' subdirectory, and writes all four SS3 input files to disk.
 #'
-#' @param i                Integer. Row index into `StochasticValues`;
-#'                         also determines the subdirectory name (zero-padded).
-#' @param StochasticValues Data frame. Sampled parameter sets with columns
 #'                         `M_female`, `M_male`, and `h`.
 #' @param SS3OutDir        Character. Parent directory in which the numbered
 #'                         simulation subdirectory will be created.
@@ -139,6 +139,9 @@ CreateSSDirectories <- function(OM_Name,
 #' @param ctl              List. SS3 control object from `r4ss::SS_readctl_3.30()`.
 #' @param starter          List. SS3 starter object from `r4ss::SS_readstarter()`.
 #' @param forecast         List. SS3 forecast object from `r4ss::SS_readforecast()`.
+#' @param i                Integer. Row index into `StochasticValues`;
+#'                         also determines the subdirectory name (zero-padded).
+#' @param StochasticValues Data frame. Sampled parameter sets with columns
 #' @param OffFleets        Integer vector or `NULL`. Fleet indices to
 #'                         deactivate by negating their year values in catch,
 #'                         length composition, and CPUE data. Default: `NULL`.
@@ -159,42 +162,48 @@ CreateSSDirectories <- function(OM_Name,
 #'
 #' @importFrom r4ss SS_writectl_3.30 SS_writedat_3.30 SS_writestarter SS_writeforecast
 #' @export
-WriteSSFiles <- function(i, StochasticValues, SS3OutDir, dat, ctl, starter, forecast,
+WriteSSFiles <- function(
+                         SS3OutDir, dat, ctl, starter, forecast,
+                         i = NULL, StochasticValues = NULL,
                          OffFleets = NULL) {
 
-  nms <- names(StochasticValues) |> strsplit("_")
-  nms <- lapply(nms, '[[', 1) |> unlist() |> unique()
+  if (!is.null(StochasticValues)) {
+    nms <- names(StochasticValues) |> strsplit("_")
+    nms <- lapply(nms, '[[', 1) |> unlist() |> unique()
 
-  supported <- c('M', 'h')
+    supported <- c('M', 'h')
 
-  if (!any(nms %in% supported))
-    cli::cli_abort(c("x" = "Non supported parameters for this function",
-                     'i' = "Provided: {.val {nms}}",
-                     'i' = "Supported: {.val {supported}}"),
-                   .internal=TRUE)
+    if (!any(nms %in% supported))
+      cli::cli_abort(c("x" = "Non supported parameters for this function",
+                       'i' = "Provided: {.val {nms}}",
+                       'i' = "Supported: {.val {supported}}"),
+                     .internal=TRUE)
 
 
-  colnames(StochasticValues) <- tolower(colnames(StochasticValues))
+    colnames(StochasticValues) <- tolower(colnames(StochasticValues))
 
-  #  Natural Mortality: preserve age-varying shape, shift overall level
-  scale_natM <- function(base_row, new_M) {
-    base_vec   <- as.numeric(base_row)
-    terminal_M <- base_vec[length(base_vec)]
-    new_M * (base_vec / terminal_M)
+    #  Natural Mortality: preserve age-varying shape, shift overall level
+    scale_natM <- function(base_row, new_M) {
+      base_vec   <- as.numeric(base_row)
+      terminal_M <- base_vec[length(base_vec)]
+      new_M * (base_vec / terminal_M)
+    }
+
+    ctl$natM[1, ] <- scale_natM(ctl$natM[1, ], StochasticValues$m_female[i])
+    ctl$natM[2, ] <- scale_natM(ctl$natM[2, ], StochasticValues$m_male[i])
+
+    # Steepness
+    ctl$SR_parms["SR_BH_steep", c("INIT", "PRIOR")] <- StochasticValues$h[i]
+
+    # Create zero-padded simulation subdirectory
+    sim_dir <- file.path(SS3OutDir, formatC(i, width = 3, flag = "0"))
+
+    if (dir.exists(sim_dir))
+      unlink(sim_dir, recursive = TRUE)
+    dir.create(sim_dir)
+  } else {
+    sim_dir <- SS3OutDir
   }
-
-  ctl$natM[1, ] <- scale_natM(ctl$natM[1, ], StochasticValues$m_female[i])
-  ctl$natM[2, ] <- scale_natM(ctl$natM[2, ], StochasticValues$m_male[i])
-
-  # Steepness
-  ctl$SR_parms["SR_BH_steep", c("INIT", "PRIOR")] <- StochasticValues$h[i]
-
-  # Create zero-padded simulation subdirectory
-  sim_dir <- file.path(SS3OutDir, formatC(i, width = 3, flag = "0"))
-
-  if (dir.exists(sim_dir))
-    unlink(sim_dir, recursive = TRUE)
-  dir.create(sim_dir)
 
   # Configure starter
   starter$ctlfile            <- "control.ss"
@@ -383,4 +392,110 @@ RunSS <- function(SS_path,
   exit_code <- system2(exe, args = args, stdout = stdout, stderr = stderr)
 
   invisible(exit_code)
+}
+
+
+
+#' Run a Single SS3 Model and Save Output
+#'
+#' Reads a set of SS3 input files from a base directory, writes them to a
+#' named output directory, and executes the SS3 model.
+#'
+#' @param OM_Name Name of the Operating Model. Used as the
+#'   name of the subdirectory created inside `outdir` to store SS3 output.
+#' @param ssdir Path to the directory containing the base SS3
+#'   input files. An error is thrown if this directory does not exist.
+#' @param outdir Path to the parent output directory. Created
+#'   if it does not already exist. Defaults to `"Condition"`.
+#' @param datfile  Name of the SS3 data file inside `ssdir`.
+#'   Defaults to `"swo2023_v004.dat"`.
+#' @param ctlfile  Name of the SS3 control file inside `ssdir`.
+#'   Defaults to `"swo2023_v007.ctl"`.
+#' @param starterfile Name of the SS3 starter file inside
+#'   `ssdir`. Defaults to `"starter.ss"`.
+#' @param forecastfile Name of the SS3 forecast file inside
+#'   `ssdir`. Defaults to `"forecast.ss"`.
+#' @param OffFleets `integer` or `character` vector of fleets to turn off
+#'   before running the model. If `NULL` (default), all fleets are retained.
+#'
+#' @return Called for its side effects. Invisibly returns `NULL`. SS3 output
+#'   files are written to `file.path(outdir, OM_Name)`.
+#'
+#' @details
+#' The function proceeds in four steps:
+#'
+#' 1. **Validation** — checks that `ssdir` exists, creating `outdir` if
+#'    needed.
+#' 2. **Read** — reads all four SS3 input files from `ssdir` using
+#'    [r4ss::SS_readdat_3.30()], [r4ss::SS_readctl_3.30()],
+#'    [r4ss::SS_readstarter()], and [r4ss::SS_readforecast()].
+#' 3. **Write** — prepares a clean output directory at
+#'    `file.path(outdir, OM_Name)`, deleting any existing contents, then
+#'    writes the input files via [WriteSSFiles()].
+#' 4. **Run** — executes SS3 in the output directory via [RunSS()].
+#'
+#' @section Warning:
+#' Any existing contents of `file.path(outdir, OM_Name)` are deleted before
+#' the model is run. Ensure any previous results have been saved elsewhere
+#' before calling this function.
+#'
+#' @seealso [WriteSSFiles()], [RunSS()], [r4ss::SS_readdat_3.30()],
+#'   [r4ss::SS_readctl_3.30()]
+#'
+#' @examples
+#' \dontrun{
+#' # Run a single SS3 model using default file names
+#' RunSingleSS(
+#'   OM_Name = "OM_Base",
+#'   ssdir   = "SS3/Base"
+#' )
+#'
+#' # Specify a custom output directory and control file
+#' RunSingleSS(
+#'   OM_Name = "OM_LowM",
+#'   ssdir   = "SS3/LowM",
+#'   outdir  = "Condition/Sensitivities",
+#'   ctlfile = "swo2023_lowM.ctl"
+#' )
+#' }
+#'
+#' @export
+RunSingleSS <- function(OM_Name,
+                        ssdir,
+                        outdir = 'Condition',
+                        datfile      = 'swo2023_v004.dat',
+                        ctlfile      = 'swo2023_v007.ctl',
+                        starterfile  = 'starter.ss',
+                        forecastfile = 'forecast.ss',
+                        OffFleets    = NULL) {
+
+  if (!dir.exists(ssdir))
+    cli::cli_abort("Cannot find `ssdir`: {ssdir}")
+
+  if (!dir.exists(outdir)) {
+    cli::cli_alert_info('Creating directory {.val {outdir}}')
+    dir.create(outdir)
+  }
+
+  # Read base SS3 files
+  dat <- r4ss::SS_readdat_3.30(file.path(ssdir, datfile), verbose = FALSE)
+  ctl <- r4ss::SS_readctl_3.30(file.path(ssdir, ctlfile), datlist = dat, verbose = FALSE)
+  starter  <- r4ss::SS_readstarter(file.path(ssdir, starterfile), verbose = FALSE)
+  forecast <- r4ss::SS_readforecast(file.path(ssdir, forecastfile), verbose = FALSE)
+
+  # Prepare output directory
+  SS3OutDir <- file.path(outdir, OM_Name)
+  if (dir.exists(SS3OutDir)) {
+    cli::cli_alert_info('Deleting existing contents of {.val {SS3OutDir}}')
+    unlink(SS3OutDir, recursive = TRUE)
+  }
+
+  cli::cli_alert_info('Creating directory {.val {SS3OutDir}}')
+  dir.create(SS3OutDir, recursive = TRUE)
+
+  WriteSSFiles(SS3OutDir, dat, ctl, starter, forecast, OffFleets=OffFleets)
+
+  cli::cli_progress_step("Running SS3 for {.val {OM_Name}}")
+  RunSS(SS3OutDir)
+  cli::cli_progress_done()
 }

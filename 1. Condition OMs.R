@@ -1,15 +1,16 @@
 # TODO
-# - OM diagnostics - identify and drop simulations that didn't converge or outliers
-# - confirm reloaded OMs have identical structure to saved
-# - Combine fleets - TODO later
 
-# - Run Historical and Save
+# High Priority
+# - OM diagnostics - identify and drop simulations that didn't converge or outliers
 # - Develop CMPs
 # - Run MSEs and Save
 # - Develop PM functions
 # - write readme for packages
 # - Update TS Doc & Project homepage
 
+
+# Lower Priority
+# - Combine fleets - TODO later
 
 # Names <- list("JPN_WCNPO_OSDWCOLL_Area1",
 #               "TWN_WCNPO_DWLL",
@@ -41,6 +42,20 @@ UpdatePackages()
 source("0. Specifications.R")
 
 ################################################################################
+######                        0. Reference OM                             ######
+################################################################################
+
+# This is the Base Case Assessment without any additional uncertainty. It is
+# used for a reference OM and to compare the estimated stock dynamics with those
+# from the stochastic OMs developed below.
+
+OM_Name <- "RefOM"
+
+RunSingleSS(OM_Name, ssdir = ssdir_base)
+
+
+
+################################################################################
 ######                        1. Base Case OM                             ######
 ################################################################################
 
@@ -63,13 +78,15 @@ LH_Samples <- Generate_LH_Samples(Parameters = LH_Mean_SD_Base,
 # Save samples to disk
 Save(LH_Samples, "LifeHistory/Base.rds", overwrite = TRUE)
 
-OM_Name <- "Base"
+
 
 ################################################################################
 #                                                                              #
 # ONLY RUN THIS BLOCK TO REBUILD SS3 DIRECTORIES AND RE-RUN THE SS3 MODELS     #
 #                                                                              #
 ################################################################################
+
+OM_Name <- "Base"
 
 # Create a numbered subdirectory for each of the nSim ensemble members,
 # copying the base SS3 model into each and substituting the sampled
@@ -83,26 +100,16 @@ CreateSSDirectories(OM_Name,
 # Execute all nSim SS3 models in parallel (this step is slow)
 RunSS3Models(OM_Name, parallel = TRUE)
 
+# Import SS3 models into an OM object and save to NPSWO.OM package
+Import_Save(OM_Name)
+
+
 ################################################################################
 #                                                                              #
 # END SS3 MODEL BLOCK                                                          #
 #                                                                              #
 ################################################################################
 
-
-# Read the SS3 report files from all subdirectories into a list
-RepList <- ImportRepList(OM_Name)
-
-# Combine the SS3 outputs into a single MSEtool OM object
-# (this can take a few minutes depending on `nSim`)
-Base <- MSEtool::ImportSS(RepList,
-                             Name  = Name,
-                             pYear = pYear,
-                             StockName = StockName,
-                             Species = Species)
-
-# Save the OM to the NPSWO.OM package
-SaveOM(Base, OM_Name, overwrite = TRUE)
 
 
 ################################################################################
@@ -113,9 +120,6 @@ SaveOM(Base, OM_Name, overwrite = TRUE)
 # East Pacific Ocean (EPO) fleets in the OM Conditioning; i.e. it is restricted
 # to the Western Central Pacific Fleet only
 
-OM_Name <- 'WCPO_only'
-source("0. Specifications.R")
-
 
 ################################################################################
 #                                                                              #
@@ -123,7 +127,7 @@ source("0. Specifications.R")
 #                                                                              #
 ################################################################################
 
-LH_Samples <- readRDS("LifeHistory/Base.rds")
+OM_Name <- 'WCPO_only'
 
 OffFleets <- 4:5 #EPO fleets; F4_IATTC, F5_JPN_EPO_OSDWL
 
@@ -136,66 +140,18 @@ CreateSSDirectories(OM_Name,
 # Execute all nSim SS3 models in parallel (this step is slow)
 RunSS3Models(OM_Name, parallel = TRUE)
 
+
+# Import SS3 models into an OM object and save to NPSWO.OM package
+Import_Save(OM_Name, DropFleets=OffFleets)
+
 ################################################################################
 #                                                                              #
 # END SS3 MODEL BLOCK                                                          #
 #                                                                              #
 ################################################################################
 
-# Read the SS3 report files from all subdirectories into a list
-RepList <- ImportRepList(OM_Name)
-
-# Combine the SS3 outputs into a single MSEtool OM object
-# (this can take a few minutes depending on `nSim`)
-WCPO_only <- MSEtool::ImportSS(RepList,
-                          Name  = Name,
-                          pYear = pYear,
-                          StockName = StockName,
-                          Species = Species)
-
-# Drop `OffFleets` from the OM object
-AllFleets <- FleetNames(WCPO_only, TRUE)
-KeepFleets <- AllFleets[-OffFleets]
-WCPO_only <- Subset(WCPO_only, Fleets=KeepFleets)
-
-# Save to NPSWO.OM package
-SaveOM(WCPO_only, OM_Name, overwrite = TRUE)
-
-LoadOM("WCPO_only")
-# Combine Fleet Info
-Names <- list("JPN_WCNPO_OSDWCOLL_Area1",
-              "TWN_WCNPO_DWLL",
-              "US_WCNPO_LL_shallow",
-              "JPN_WCNPO_Other")
-
-Fleets <- list(
-  c(1,6),
-  c(2, 13),
-  c(3, 7),
-  c(11, 12)
-)
 
 
-
-n <- 50
-
-
-
-
-pairs(StochasticValues, pch=16)
-
-
-
-
-
-SetupParallel()
-
-SSDirs <- list.dirs(path, recursive=FALSE)
-RepList <- ImportSSReport(SSDirs[1:n], parallel = TRUE)
-
-OM_Base <- ImportSS(RepList) |> CombineFleets(Names, Fleets)
-
-Save(OM_Base, "Objects_OM/Base.om", overwrite = TRUE)
 
 
 

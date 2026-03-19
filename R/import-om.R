@@ -31,6 +31,12 @@ ImportRepList <- function(OM_Name,
   path <- file.path(outdir, OM_Name)
   SSDirs <- list.dirs(path, recursive=FALSE)
 
+  if (!length(SSDirs)) {
+    return(
+      MSEtool::ImportSSReport(path, parallel = FALSE)
+    )
+  }
+
   if (!is.null(nmax))
     SSDirs <- SSDirs[seq_len(min(length(SS3Dirs), nmax))]
 

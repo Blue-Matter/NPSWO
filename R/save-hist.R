@@ -17,7 +17,7 @@
 #'   saving, reducing object size by dropping redundant array dimensions.
 #'   Default: `TRUE`.
 #' @param overwrite Logical. Whether to overwrite an existing file of the same
-#'   name. Default: `FALSE`.
+#'   name. Default: `TRUE`.
 #' @param silent Logical. Whether to suppress the printed list of available
 #'   objects. Default: `FALSE`.
 #'
@@ -36,7 +36,7 @@
 #' @importFrom stats setNames
 #' @name SaveLoadHist
 #' @export
-SaveHist <- function(Hist, name, path="Objects/Hist", compress=TRUE, overwrite=FALSE) {
+SaveHist <- function(Hist, name, path="Objects/Hist", compress=TRUE, overwrite=TRUE) {
 
   if (!inherits(Hist, 'hist'))
     cli::cli_abort("Hist must be an {.cls MSEtool::hist} object")

@@ -16,3 +16,9 @@ ssdir_base <- "../WCNPOSWO-2023/Final Base-case"
 
 # Detect available cores and register a parallel backend for downstream functions
 SetupParallel()
+
+
+# OM Control
+# make real (ie from OM) Effort available in Data@Misc
+ControlList <- list(DataOM=list(Effort=TRUE,
+                                Landings=TRUE))
