@@ -47,6 +47,7 @@ SaveHist <- function(Hist, name, path="Objects/Hist", compress=TRUE, overwrite=F
   if (compress) {
     cli::cli_progress_step("Compressing {.val {name}}")
     Hist <- Compress(Hist)
+    cli::cli_process_done()
   }
 
   path <- file.path(path, paste0(name, '.hist'))

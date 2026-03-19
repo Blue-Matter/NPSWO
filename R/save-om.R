@@ -2,12 +2,10 @@
 #'
 #' Optionally compresses an [MSEtool::om-class] object via [Compress()], then
 #' writes it to the `data/` directory of the NPSWO.OM package as a compressed
-#' `.rda` file. Optionally also saves a local copy as a `.om` file in
-#' `Objects/OM/`. An `OM_` prefix is added to `name` automatically if not
-#' already present.
+#' `.rda` file.
 #'
 #' @param OM An [MSEtool::OM()] object.
-#' @param name Character. Name for the saved object and `.rda` file (e.g.
+#' @param OM_Name Character. Name for the saved object and `.rda` file (e.g.
 #'   `"Base"` or `"OM_Base"`). The `OM_` prefix is added automatically if
 #'   missing, so both produce `data/OM_Base.rda`.
 #' @param path Character. Path to the root directory of the NPSWO.OM package.
@@ -16,17 +14,13 @@
 #'   saving, reducing object size by dropping redundant array dimensions.
 #'   Default: `TRUE`.
 #'
-#' @param local Logical. Whether to also save a local copy as
-#'   `Objects/OM/<name>.om`. The directory is created if it does not exist.
-#'   Local files are ignored by git and must be generated locally.
-#'   Default: `TRUE`.
 #'
 #' @param overwrite Logical. Whether to overwrite an existing `.rda` file of
-#'   the same name. Default: `FALSE`.
+#'   the same name. Default: `TRUE`.
 #'
 #' @return Invisibly returns `NULL`. Called for its side-effect of writing
-#'   `data/OM_<name>.rda` in the NPSWO.OM package, and optionally
-#'   `Objects/OM/<name>.om` locally.
+#'   `data/OM_<OM_Name>.rda` in the NPSWO.OM package, and optionally
+#'   `Objects/OM/<OM_Name>.om` locally.
 #'
 #' @seealso [Compress()], [usethis::use_data()], [withr::with_dir()]
 #'
@@ -34,7 +28,7 @@
 #' @importFrom usethis use_data
 #' @importFrom cli cli_abort
 #' @export
-SaveOM <- function(OM, name, path="../NPSWO.OM", compress=TRUE, local=TRUE, overwrite = FALSE) {
+SaveOM <- function(OM, OM_Name, path="../NPSWO.OM", compress=TRUE, overwrite = TRUE) {
 
   if (!inherits(OM, 'om'))
     cli::cli_abort("OM must be an {.cls MSEtool::om} object")
@@ -45,37 +39,27 @@ SaveOM <- function(OM, name, path="../NPSWO.OM", compress=TRUE, local=TRUE, over
                      'i'= 'Clone from the GitHub repository {.url https://github.com/Blue-Matter/NPSWO.OM}')
     )
 
-  if (is.null(name))
-    name <- deparse(substitute(OM))
+  if (is.null(OM_Name))
+    OM_Name <- deparse(substitute(OM))
 
-  if (!grepl("^OM_", name))
-    name <- paste("OM", name, sep='_')
+  if (!grepl("^OM_", OM_Name))
+    OM_Name <- paste("OM", OM_Name, sep='_')
 
   if (compress) {
-    cli::cli_progress_step("Compressing {.val {name}}")
+    cli::cli_progress_step("Compressing {.val {OM_Name}}")
     OM <- Compress(OM)
   }
 
-  assign(name, OM)
+  assign(OM_Name, OM)
 
-  cli::cli_progress_step("Saving {.val {name}} to {.path {file.path(path, 'data', paste0(name, '.rda'))}}")
+  cli::cli_progress_step("Saving {.val {OM_Name}} to {.path {file.path(path, 'data', paste0(OM_Name, '.rda'))}}")
   withr::with_options(
     list(cli.default_handler = function(msg) invisible(NULL)), {
       withr::with_dir(path, {
-        do.call(usethis::use_data, list(as.name(name), overwrite = overwrite))
+        do.call(usethis::use_data, list(as.name(OM_Name), overwrite = overwrite))
       })
     }
   )
-
-
-  if (local) {
-    localpath <- "Objects/OM"
-    cli::cli_progress_step("Saving {.val {name}} to {.path {file.path(localpath, paste0(name, '.om'))}}")
-    if (!dir.exists(localpath))
-      dir.create(localpath, recursive = TRUE)
-    path <- file.path(localpath, paste0(name, '.om'))
-    MSEtool::Save(Hist, path, overwrite)
-  }
 
   cli::cli_progress_done()
 }
@@ -134,7 +118,7 @@ ListOMs <- function(source = c("installed", "local"), path = "../NPSWO.OM") {
 #' its full array dimensions via [Expand()]. The `OM_` prefix is added
 #' automatically if not already present.
 #'
-#' @param name Character. Name of the OM to load (e.g. `"Base"` or
+#' @param OM_Name Character. Name of the OM to load (e.g. `"Base"` or
 #'   `"OM_Base"`). The `OM_` prefix is added automatically if missing.
 #'
 #' @param source Character. Where to look for OM objects. `"local"` searches
@@ -151,11 +135,11 @@ ListOMs <- function(source = c("installed", "local"), path = "../NPSWO.OM") {
 #'
 #' @importFrom utils data
 #' @export
-LoadOM <- function(name, source = c("installed", "local"), path = "../NPSWO.OM") {
+LoadOM <- function(OM_Name, source = c("installed", "local"), path = "../NPSWO.OM") {
   source <- match.arg(source)
 
-  if (!grepl("^OM_", name))
-    name <- paste("OM", name, sep = "_")
+  if (!grepl("^OM_", OM_Name))
+    OM_Name <- paste("OM", OM_Name, sep = "_")
 
   if (source == "installed") {
     if (!requireNamespace("NPSWO.OM", quietly = TRUE))
@@ -165,16 +149,16 @@ LoadOM <- function(name, source = c("installed", "local"), path = "../NPSWO.OM")
       ))
     available <- utils::data(package = "NPSWO.OM")$results[, "Item"]
 
-    if (!name %in% available)
+    if (!OM_Name %in% available)
       cli::cli_abort(c(
-        "x" = "{.val {name}} not found in {.pkg NPSWO.OM}.",
+        "x" = "{.val {OM_Name}} not found in {.pkg NPSWO.OM}.",
         "i" = "Available OMs: {.val {available}}"
       ))
 
-    cli::cli_progress_step("Loading {.val {name}}")
+    cli::cli_progress_step("Loading {.val {OM_Name}}")
     env <- new.env(parent = emptyenv())
-    utils::data(list = name, package = "NPSWO.OM", envir = env)
-    obj <- env[[name]]
+    utils::data(list = OM_Name, package = "NPSWO.OM", envir = env)
+    obj <- env[[OM_Name]]
 
   } else {
     data_dir <- file.path(path, "data")
@@ -186,20 +170,20 @@ LoadOM <- function(name, source = c("installed", "local"), path = "../NPSWO.OM")
       ))
     available <- tools::file_path_sans_ext(list.files(file.path(path, "data")))
 
-    if (!name %in% available)
+    if (!OM_Name %in% available)
       cli::cli_abort(c(
-        "x" = "{.val {name}} not found in {.path {data_dir}}.",
+        "x" = "{.val {OM_Name}} not found in {.path {data_dir}}.",
         "i" = "Available OMs: {.val {available}}"
       ))
 
-    cli::cli_progress_step("Loading {.val {name}}")
-    rda_path <- file.path(data_dir, paste0(name, ".rda"))
+    cli::cli_progress_step("Loading {.val {OM_Name}}")
+    rda_path <- file.path(data_dir, paste0(OM_Name, ".rda"))
     env <- new.env(parent = emptyenv())
     load(rda_path, envir = env)
-    obj <- env[[name]]
+    obj <- env[[OM_Name]]
   }
 
-  cli::cli_progress_step("Expanding {.val {name}}")
+  cli::cli_progress_step("Expanding {.val {OM_Name}}")
   OM <- Expand(obj)
   cli::cli_progress_done()
   OM

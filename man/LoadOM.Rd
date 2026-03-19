@@ -4,10 +4,10 @@
 \alias{LoadOM}
 \title{Load an OM Object from the NPSWO.OM Package}
 \usage{
-LoadOM(name, source = c("installed", "local"), path = "../NPSWO.OM")
+LoadOM(OM_Name, source = c("installed", "local"), path = "../NPSWO.OM")
 }
 \arguments{
-\item{name}{Character. Name of the OM to load (e.g. \code{"Base"} or
+\item{OM_Name}{Character. Name of the OM to load (e.g. \code{"Base"} or
 \code{"OM_Base"}). The \code{OM_} prefix is added automatically if missing.}
 
 \item{source}{Character. Where to look for OM objects. \code{"local"} searches

@@ -4,19 +4,12 @@
 \alias{SaveOM}
 \title{Save an OM Object to the NPSWO.OM Data Package}
 \usage{
-SaveOM(
-  OM,
-  name,
-  path = "../NPSWO.OM",
-  compress = TRUE,
-  local = TRUE,
-  overwrite = FALSE
-)
+SaveOM(OM, OM_Name, path = "../NPSWO.OM", compress = TRUE, overwrite = TRUE)
 }
 \arguments{
 \item{OM}{An \code{\link[MSEtool:OM]{MSEtool::OM()}} object.}
 
-\item{name}{Character. Name for the saved object and \code{.rda} file (e.g.
+\item{OM_Name}{Character. Name for the saved object and \code{.rda} file (e.g.
 \code{"Base"} or \code{"OM_Base"}). The \code{OM_} prefix is added automatically if
 missing, so both produce \code{data/OM_Base.rda}.}
 
@@ -27,25 +20,18 @@ Default: \code{"../NPSWO.OM"}.}
 saving, reducing object size by dropping redundant array dimensions.
 Default: \code{TRUE}.}
 
-\item{local}{Logical. Whether to also save a local copy as
-\verb{Objects/OM/<name>.om}. The directory is created if it does not exist.
-Local files are ignored by git and must be generated locally.
-Default: \code{TRUE}.}
-
 \item{overwrite}{Logical. Whether to overwrite an existing \code{.rda} file of
-the same name. Default: \code{FALSE}.}
+the same name. Default: \code{TRUE}.}
 }
 \value{
 Invisibly returns \code{NULL}. Called for its side-effect of writing
-\verb{data/OM_<name>.rda} in the NPSWO.OM package, and optionally
-\verb{Objects/OM/<name>.om} locally.
+\verb{data/OM_<OM_Name>.rda} in the NPSWO.OM package, and optionally
+\verb{Objects/OM/<OM_Name>.om} locally.
 }
 \description{
 Optionally compresses an \link[MSEtool:om-class]{MSEtool::om} object via \code{\link[=Compress]{Compress()}}, then
 writes it to the \verb{data/} directory of the NPSWO.OM package as a compressed
-\code{.rda} file. Optionally also saves a local copy as a \code{.om} file in
-\verb{Objects/OM/}. An \code{OM_} prefix is added to \code{name} automatically if not
-already present.
+\code{.rda} file.
 }
 \seealso{
 \code{\link[=Compress]{Compress()}}, \code{\link[usethis:use_data]{usethis::use_data()}}, \code{\link[withr:with_dir]{withr::with_dir()}}

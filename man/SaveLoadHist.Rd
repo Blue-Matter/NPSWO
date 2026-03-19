@@ -14,7 +14,7 @@ ListHist(path = "Objects/Hist", silent = FALSE)
 LoadHist(name, path = "Objects/Hist")
 }
 \arguments{
-\item{Hist}{A \link[MSEtool:hist-class]{MSEtool::hist} object.}
+\item{Hist}{A \link[MSEtool:Hist-class]{MSEtool::hist} object.}
 
 \item{name}{Character. Name of the object (without extension), used as the
 file name for saving and loading.}
@@ -39,12 +39,12 @@ objects. Default: \code{FALSE}.}
 writing \verb{<path>/<name>.hist} to disk.
 \item \code{ListHist()}: Invisibly returns a character vector of available file names
 (without extension).
-\item \code{LoadHist()}: Returns an expanded \link[MSEtool:hist-class]{MSEtool::hist} object with array
+\item \code{LoadHist()}: Returns an expanded \link[MSEtool:Hist-class]{MSEtool::hist} object with array
 slots restored to full \verb{nSim x nYear} dimensions via \code{\link[=Expand]{Expand()}}.
 }
 }
 \description{
-A matched set of functions for saving and loading \link[MSEtool:hist-class]{MSEtool::hist} objects to
+A matched set of functions for saving and loading \link[MSEtool:Hist-class]{MSEtool::hist} objects to
 disk. \code{SaveHist()} compresses and writes a \code{.hist} file locally. \code{ListHist()}
 lists available \code{.hist} files in a directory. \code{LoadHist()} loads and expands
 a saved \code{.hist} file back to full array dimensions.

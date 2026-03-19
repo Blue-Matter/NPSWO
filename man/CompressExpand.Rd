@@ -11,7 +11,7 @@ Compress(x)
 Expand(x)
 }
 \arguments{
-\item{x}{An \link[MSEtool:om-class]{MSEtool::om}, \link[MSEtool:hist-class]{MSEtool::hist}, or \link[MSEtool:mse-class]{MSEtool::mse} object.}
+\item{x}{An \link[MSEtool:om-class]{MSEtool::om}, \link[MSEtool:Hist-class]{MSEtool::hist}, or \link[MSEtool:MSE-class]{MSEtool::mse} object.}
 }
 \value{
 An object of the same class as \code{x} with the affected array slots
