@@ -15,9 +15,6 @@ knitr::opts_chunk$set(
 
 # NPSWO MSE Framework
 
-<!-- badges: start -->
-<!-- badges: end -->
-
 The goal of NPSWO is to ...
 
 ## Installation
