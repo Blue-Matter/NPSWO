@@ -46,7 +46,7 @@ Import_Save <- function(OM_Name, DropFleets = NULL) {
   RepList <- ImportRepList(OM_Name)
 
   # Combine the SS3 outputs into a single MSEtool OM object
-  # (this can take a few minutes depending on `nSim`)
+  # (this can take a few minutes depending on `length(RepList)`)
   OM <- MSEtool::ImportSS(RepList,
                           Name  = Name,
                           nSim = nSim,
