@@ -5,8 +5,8 @@ Authors@R:
     c(person("Adrian", "Hordyk", , "adrian@bluematterscience.com", role = c("aut", "cre")),
     person("Rebecca", "Scott", , "rscott@bluematterscience.com", role = c("aut")))
 Description: A framework for conducting Management Strategy Evaluation (MSE)
-    for North Pacific swordfish (Xiphias gladius). Built on the openMSE
-    ecosystem, with MSEtool serving as the primary MSE engine. The package
+    for North Pacific swordfish (Xiphias gladius). Built with the openMSE
+    framework, with MSEtool serving as the primary MSE engine. The package
     provides functions specific to the North Pacific swordfish MSE, including
     operating model conditioning, stochastic life-history parameter sampling,
     and Stock Synthesis 3 (SS3) model setup and execution. The root directory
