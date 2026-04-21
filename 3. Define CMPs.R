@@ -87,6 +87,7 @@ CalcDeltaEffort <- function(Data,
 
   deltaEffort
 }
+class(CalcDeltaEffort) <- 'mp'
 
 
 # Management procedure (MP) implementing a seasonal Itarget HCR based on
