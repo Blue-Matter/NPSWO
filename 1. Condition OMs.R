@@ -55,6 +55,9 @@ RunSingleSS(OM_Name, ssdir = ssdir_base)
 
 
 
+##################### - START Stochastic Sampling Approach - ###########################
+
+
 ################################################################################
 ######                        1. Base Case OM                             ######
 ################################################################################
@@ -150,9 +153,41 @@ Import_Save(OM_Name, DropFleets=OffFleets)
 #                                                                              #
 ################################################################################
 
+###################### - END Stochastic Sampling Approach - ############################
 
 
 
 
+############ - START OMs from 2023 Assessment (Base and Sens. Runs) - #################
 
+################################################################################
+######                      1. Reference Set OMs                          ######
+################################################################################
+# The reference set of OMs represents the final accepted base case model of the
+# 2023 ISC NPSWO stock assessment and the associated 24 sensitivity runs (25 total)
+library(gtools)
 
+# direct to local folder containing all SS model outputs
+con_dir = file.path(getwd(), "Condition", "WCNPOSWO-2023")
+
+# get lists of (correctly ordered) model file paths, shortened names
+# the base case OM is stored as OM_0
+sim_dirs = mixedsort(list.dirs(con_dir, recursive=FALSE))
+sim_names = mixedsort(list.dirs(con_dir, full.names = FALSE, recursive=FALSE))
+sim_nums = mixedsort(sub("_.*", "", sim_names))
+
+# looping through all model files and saving as individual OMs
+for(i in 1:length(sim_dirs)){
+  OM_Name <- sim_names[i]
+  RepList <- ImportSSReport(sim_dirs[i])
+  assign(paste0("OM_", sim_nums[i]), MSEtool::ImportSS(RepList,
+                                                       Name  = OM_Name,
+                                                       nSim = nSim,
+                                                       pYear = pYear,
+                                                       StockName = StockName,
+                                                       Species = Species))
+  # saving newly created OM to NPSWO.OM package
+  SaveOM(get(paste0("OM_", sim_nums[i])), OM_Name, overwrite = TRUE)
+
+}
+############# - END OMs from 2023 Assessment (Base and Sens. Runs) - ###################
