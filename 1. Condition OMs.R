@@ -176,6 +176,9 @@ sim_dirs <- mixedsort(list.dirs(con_dir, recursive=FALSE))
 sim_names <- mixedsort(list.dirs(con_dir, full.names = FALSE, recursive=FALSE))
 sim_nums <- mixedsort(sub("_.*", "", sim_names))
 
+
+
+
 # looping through all model files and saving as individual OMs
 for(i in 1:length(sim_dirs)){
   OM_Name <- sim_names[i]

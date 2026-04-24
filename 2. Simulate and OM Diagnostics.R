@@ -94,6 +94,29 @@ Base_hist      <- LoadHist("Base")
 WCPO_only_hist <- LoadHist("WCPO_only")
 
 
+#### Becky 4/24:#################################################################
+# List of available OMs in the NPSWO.OM package
+All_OMs <- ListOMs()
+
+# Select the OMs to run Simulate on:
+Run_OMs <- All_OMs[c(17, 18, 20, 21)]
+Run_OMs
+# Runs `Simulate` for all OMs in Run_OMs and saves to disk using SaveHist
+# This will overwrite any existing .hist files for the same OMs
+RunSimulations(Run_OMs)
+
+
+# ---- Explore Diagnostics -----
+
+ListHist()
+
+base_hist  <- LoadHist("0_Final_base_case")
+lowM_hist  <- LoadHist("2_base_case_lowM")
+highM_hist <- LoadHist("1_base_case_highM")
+lowh_hist  <- LoadHist("4_Sensitivity_h081")
+highh_hist <- LoadHist("5_Sensitivity_h099")
+#################################################################################
+
 # TODO: develop plotting functions
 
 Ref_df <- Array2DF(RefOM@Biomass) |> dplyr::mutate(Model='Ref')

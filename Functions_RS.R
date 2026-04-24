@@ -1,4 +1,4 @@
-#updated function for getting projection years
+#chk_yrs()
 chk_yrs <- function (Yrs, MSEobj)
 {
   if (!methods::is(MSEobj, "mse"))
@@ -45,6 +45,8 @@ chk_yrs <- function (Yrs, MSEobj)
 }
 
 
+
+#calcMean()
 calcMean <- function (PM, MSEobj)
 {
   if (length(MSEobj@MPs) > 1) {
@@ -56,6 +58,7 @@ calcMean <- function (PM, MSEobj)
 }
 
 
+#calcProb()
 calcProb <- function (Prob)
 {
   if ("matrix" %in% class(Prob))
@@ -65,3 +68,55 @@ calcProb <- function (Prob)
 }
 
 
+
+#SaveMSE()
+SaveMSE <- function(MSE, name, path="Objects/MSE", compress=TRUE, overwrite=TRUE) {
+
+  if (!inherits(MSE, 'mse'))
+    cli::cli_abort("MSE must be an {.cls MSEtool::mse} object")
+
+  if (!dir.exists(path))
+    dir.create(path, recursive = TRUE)
+
+  if (compress) {
+    cli::cli_progress_step("Compressing {.val {name}}")
+    MSE <- Compress(MSE)
+    cli::cli_process_done()
+  }
+
+  path <- file.path(path, paste0(name, '.mse'))
+  MSEtool::Save(MSE, path, overwrite)
+
+}
+
+
+#ListMSE()
+ListMSE <- function(path="Objects/MSE", silent=FALSE) {
+  files <- tools::file_path_sans_ext(list.files(path))
+  if (!silent) {
+    cli::cli_text("MSE objects available in {.val {path}}:")
+    cli::cli_bullets(stats::setNames(files, rep("*", length(files))))
+  }
+
+  invisible(files)
+}
+
+
+#LoadMSE()
+LoadMSE <- function(name, path="Objects/MSE") {
+  availMSE <- ListMSE(path, silent=TRUE)
+  if (!name %in% availMSE)
+    cli::cli_abort(c("x"="{.val {name}} not found in {.val {path}}",
+                     "i"="Available `MSE` objects are: {.val {availMSE}}"))
+
+  full.path <- file.path(path, paste0(name, '.mse'))
+
+  cli::cli_progress_step("Loading {.val {full.path}}")
+
+  MSE <- readRDS(full.path)
+
+  cli::cli_progress_step("Expanding {.val {name}}")
+
+  Expand(MSE)
+
+}
