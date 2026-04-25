@@ -25,8 +25,8 @@ source("PM_Functions.R")
 ###      Average annual catch in the first five years of the projection period
 ##################################################################################################################
 ## DEBUGGING LINES
-Yrs = chk_yrs(Yrs = NULL, base)
-MSEobj = base
+#Yrs = chk_yrs(Yrs = NULL, base)
+#MSEobj = base
 
 # List of available MSEs
 All_MSE <- ListMSE()
