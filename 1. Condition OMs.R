@@ -167,13 +167,11 @@ Import_Save(OM_Name, DropFleets=OffFleets)
 # 2023 ISC NPSWO stock assessment and the associated 24 sensitivity runs (25 total)
 library(gtools)
 
-# direct to local folder containing all SS model outputs
-con_dir <- file.path(getwd(), "Condition", "WCNPOSWO-2023")
 
 # get lists of (correctly ordered) model file paths, shortened names
 # the base case OM is stored as OM_0
-sim_dirs <- mixedsort(list.dirs(con_dir, recursive=FALSE))
-sim_names <- mixedsort(list.dirs(con_dir, full.names = FALSE, recursive=FALSE))
+sim_dirs <- mixedsort(list.dirs(ssdir_all, recursive=FALSE))
+sim_names <- mixedsort(list.dirs(ssdir_all, full.names = FALSE, recursive=FALSE))
 sim_nums <- mixedsort(sub("_.*", "", sim_names))
 
 

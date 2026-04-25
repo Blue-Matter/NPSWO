@@ -12,7 +12,8 @@ DataLag  <- 0  # years of lag between data collection and management action (to 
 pYear    <- 25 # number of years in the MSE projection period
 
 # Path to the SS3 base-case model directory
-ssdir_base <- "../WCNPOSWO-2023/Final Base-case"
+ssdir_all  <- "../Condition/WCNPOSWO-2023"
+ssdir_base <- "../Condition/WCNPOSWO-2023/0_Final Base-case"
 
 # Detect available cores and register a parallel backend for downstream functions
 SetupParallel()

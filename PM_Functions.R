@@ -1,64 +1,259 @@
 
-#prob that stock is in green kobe
-Status_pgk <- function(MSE, Yrs=NULL) {
-  Yrs <- chk_yrs(Yrs, MSE)
-
-  PMobj <- new("PMobj")
-  PMobj@Name <- "Probability Stock is in Green Kobe"
-  PMobj@Caption <- paste0('Prob. Green Kobe (Years ', Yrs[1], ' - ', Yrs[2], ')')
-
-  #2-sex model, so have to sum female and male biomass before dividing by ref point
-  PMobj@Stat <- round((MSE@SBiomass[,1,Yrs[1]:Yrs[2],] + MSE@SBiomass[,2,Yrs[1]:Yrs[2],])/MSE@Reference@MSY@SBMSY,2) >= 1 & #no ref points calculated
-     round(MSE@F_FMSY[,,Yrs[1]:Yrs[2]],2) <= 1 #MSY ref points calculated for entire stock (male/female?)
-  PMobj@Ref <- 1
-  PMobj@Prob <- calcProb(PMobj@Stat, MSE) #function calcProb() looks like it's calculating mean
-  PMobj@Mean <- calcMean(PMobj@Prob,) #function calcMean() looks like it's calculating prob
-  PMobj@MPs <- MSE@MPs
-  PMobj
-}
-class(Status_pgk) <- 'pm'
-
-
-#prob that SSB/SSBMSY > 0.5
-Safety_05MSY <- function(MSE, Ref=0.5, Yrs=NULL) {
-  Yrs <- chk_yrs(Yrs, MSE)
+#prob that SSB < SBMSY
+Safety_MSY <- function(MSEobj, Ref=1, Yrs=NULL) {
+  Yrs <- chk_yrs(Yrs, MSEobj)
   PMobj <- new("PMobj")
   PMobj@Name <- "Spawning Biomass relative to SBMSY"
   if (Ref != 1) {
-    PMobj@Caption <- paste0("Prob. SB > ", Ref, " SBMSY (Years ",
-                            Yrs[1], " - ", Yrs[2], ")")
+    PMobj@Caption <- paste0("Prob. SB < ", Ref, " SBMSY (Proj. Years ",
+                            Yrs[1], " - ", Yrs[2]/4, ")")
   }
   else {
-    PMobj@Caption <- paste0("Prob. SB > SBMSY (Years ", Yrs[1],
-                            " - ", Yrs[2], ")")
+    PMobj@Caption <- paste0("Prob. SB < SBMSY (Proj. Years ", Yrs[1],
+                            " - ", Yrs[2]/4, ")")
   }
   PMobj@Ref <- Ref
-  PMobj@Stat <- (MSE@SBiomass[,1,Yrs[1]:Yrs[2],] + MSE@SBiomass[,2,Yrs[1]:Yrs[2],])/MSE@Reference@MSY@SBMSY
-  PMobj@Prob <- calcProb(PMobj@Stat > PMobj@Ref, MSE)
-  PMobj@Mean <- calcMean(PMobj@Prob)
-  PMobj@MPs <- MSE@MPs
+
+  ###############################################################################
+  #calling RP from OM because not yet included in mse object - REMOVE WHEN FIXED
+  #importing OM with the same name as the current MSEobj
+  dir_list  <- mixedsort(list.dirs(ssdir_all, recursive=FALSE))
+  RepList   <- ImportSSReport(dir_list[grepl(MSEobj@OM@Name, dir_list, ignore.case = TRUE)])
+  #Pulling out SBMSY
+  DerQuants <- RepList$`1`$derived_quants
+  SBMSY <- DerQuants[DerQuants$Label == "SSB_MSY", ]
+  SBMSY <- SBMSY$Value
+  ################################################################################
+
+  #calculating annual values of SBiomass (female only)
+  SBiomass <- MSEobj@SBiomass[,1,Yrs[1]:Yrs[2],]
+  Annual_SBiomass <- as.data.frame(SBiomass) |>   #averaging across seasons to get annual values
+    tibble::rownames_to_column("Sim") |>
+    tidyr::pivot_longer(-Sim, names_to = "Year", values_to = "Value") |>
+    dplyr::mutate(Year = substr(Year, 1, 4)) |>
+    dplyr::summarise(Value = mean(Value), .by = c(Sim, Year)) |>
+    tidyr::pivot_wider(names_from = Year, values_from = Value)
+
+  Annual_SBiomass <- as.data.frame(Annual_SBiomass)
+  PMobj@Stat <- as.array(as.matrix((Annual_SBiomass |>
+      dplyr::mutate(dplyr::across(-Sim, ~ round(.x / SBMSY,2))))))
+  #dropping Sim column and making numeric otherwise calcPrb doesn't work correctly
+  PMobj@Prob <- calcProb(apply(PMobj@Stat[,2:ncol(PMobj@Stat)], 2, as.numeric) < PMobj@Ref)
+  #PMobj@Mean <- calcMean(PMobj@Prob, MSEobj) # TO DO: circle back to calcMean() function - not working
+  PMobj@Mean <- mean(PMobj@Prob)
+  PMobj@MPs <- names(MSEobj@MPs)
   PMobj
 }
-class(Safety_05MSY) <- 'pm'
+class(Safety_MSY) <- 'pm'
 
 
+#########################################################################################################################
 
-Catch_ST <- function(MSE, Yrs=20) { #adjust timeframe as necessary, keep in mind that seasonal model mult. by 4 (so this is 1st 5 years)
-  Yrs <- chk_yrs(Yrs, MSE)
-
+#prob that SSB < 17%SSB0
+Safety_17SSB0 <- function(MSEobj, Ref=.17, Yrs=NULL) {
+  Yrs <- chk_yrs(Yrs, MSEobj)
   PMobj <- new("PMobj")
-  PMobj@Name <- "Average Short-Term Catch"
+  PMobj@Name <- "Spawning Biomass relative to 17%SSB0 (BMSY)"
+  if (Ref != 1) {
+    PMobj@Caption <- paste0("Prob. SB < ", Ref, " SSB0 (Proj. Years ",
+                            Yrs[1], " - ", Yrs[2]/4, ")")
+  }
+  else {
+    PMobj@Caption <- paste0("Prob. SB < SSB0 (Proj. Years ", Yrs[1],
+                            " - ", Yrs[2]/4, ")")
+  }
+  PMobj@Ref <- Ref
 
-  PMobj@Caption <- paste0('Average Catch (Years ', Yrs[1], ' - ', Yrs[2], ')')
-  PMobj@Stat <- MSE@Landings[,1,Yrs[1]:Yrs[2],,] + MSE@Landings[,2,Yrs[1]:Yrs[2],,]
-  PMobj@Ref <- 1
-  PMobj@Prob <- calcProb(PMobj@Stat)
-  PMobj@Mean <- calcMean(PMobj@Prob, MSE) |> round()
-  PMobj@MPs <- MSE@MPs
+  ###############################################################################
+  #calling RP from OM because not yet included in mse object - REMOVE WHEN FIXED
+  #importing OM with the same name as the current MSEobj
+  dir_list  <- mixedsort(list.dirs(ssdir_all, recursive=FALSE))
+  RepList   <- ImportSSReport(dir_list[grepl(MSEobj@OM@Name, dir_list, ignore.case = TRUE)])
+  #Pulling out SSB0
+  DerQuants <- RepList$`1`$derived_quants
+  SSB0 <- DerQuants[DerQuants$Label == "SSB_unfished", ]
+  SSB0 <- SSB0$Value
+  ################################################################################
+
+  #calculating annual values of SBiomass (female only)
+  SBiomass <- MSEobj@SBiomass[,1,Yrs[1]:Yrs[2],]
+  Annual_SBiomass <- as.data.frame(SBiomass) |>   #averaging across seasons to get annual values
+    tibble::rownames_to_column("Sim") |>
+    tidyr::pivot_longer(-Sim, names_to = "Year", values_to = "Value") |>
+    dplyr::mutate(Year = substr(Year, 1, 4)) |>
+    dplyr::summarise(Value = mean(Value), .by = c(Sim, Year)) |>
+    tidyr::pivot_wider(names_from = Year, values_from = Value)
+
+  Annual_SBiomass <- as.data.frame(Annual_SBiomass)
+  PMobj@Stat <- as.array(as.matrix((Annual_SBiomass |>
+                                      dplyr::mutate(dplyr::across(-Sim, ~ round(.x / SSB0,2))))))
+  #dropping Sim column and making numeric otherwise calcPrb doesn't work correctly
+  PMobj@Prob <- calcProb(apply(PMobj@Stat[,2:ncol(PMobj@Stat)], 2, as.numeric) < PMobj@Ref)
+  #PMobj@Mean <- calcMean(PMobj@Prob, MSEobj) # TO DO: circle back to calcMean() function - not working
+  PMobj@Mean <- mean(PMobj@Prob)
+  PMobj@MPs <- names(MSEobj@MPs)
   PMobj
 }
-class(Catch_ST) <- 'pm'
+class(Safety_17SSB0) <- 'pm'
 
-Catch_LT <- Catch_ST
-formals(Catch_LT)$Yrs <- -10
-class(Catch_LT) <- 'pm'
+
+#########################################################################################################################
+
+
+#prob that SSB > 25%SSB0
+Status_25SSB0 <- function(MSEobj, Ref=0.25, Yrs=NULL) {
+  Yrs <- chk_yrs(Yrs, MSEobj)
+  PMobj <- new("PMobj")
+  PMobj@Name <- "Spawning Biomass relative to 25% SSB0"
+  if (Ref != 1) {
+    PMobj@Caption <- paste0("Prob. SB > ", Ref, " SSB0 (Proj. Years ",
+                            Yrs[1], " - ", Yrs[2]/4, ")")
+  }
+  else {
+    PMobj@Caption <- paste0("Prob. SB > SSB0 (Proj. Years ", Yrs[1],
+                            " - ", Yrs[2]/4, ")")
+  }
+  PMobj@Ref <- Ref
+
+  ###############################################################################
+  #calling RP from OM because not yet included in mse object - REMOVE WHEN FIXED
+  #importing OM with the same name as the current MSEobj
+  dir_list  <- gtools::mixedsort(list.dirs(ssdir_all, recursive=FALSE))
+  RepList   <- ImportSSReport(dir_list[grepl(MSEobj@OM@Name, dir_list, ignore.case = TRUE)])
+  #Pulling out SSB0
+  DerQuants <- RepList$`1`$derived_quants
+  SSB0 <- DerQuants[DerQuants$Label == "SSB_unfished", ]
+  SSB0 <- SSB0$Value
+  ################################################################################
+
+  #calculating annual values of SBiomass (female only)
+  SBiomass <- MSEobj@SBiomass[,1,Yrs[1]:Yrs[2],]
+  Annual_SBiomass <- as.data.frame(SBiomass) |>   #averaging across seasons to get annual values
+    tibble::rownames_to_column("Sim") |>
+    tidyr::pivot_longer(-Sim, names_to = "Year", values_to = "Value") |>
+    dplyr::mutate(Year = substr(Year, 1, 4)) |>
+    dplyr::summarise(Value = mean(Value), .by = c(Sim, Year)) |>
+    tidyr::pivot_wider(names_from = Year, values_from = Value)
+
+  Annual_SBiomass <- as.data.frame(Annual_SBiomass)
+  PMobj@Stat <- as.array(as.matrix((Annual_SBiomass |>
+                                      dplyr::mutate(dplyr::across(-Sim, ~ round(.x / SSB0,2))))))
+  #dropping Sim column and making numeric otherwise calcPrb doesn't work correctly
+  PMobj@Prob <- calcProb(apply(PMobj@Stat[,2:ncol(PMobj@Stat)], 2, as.numeric) > PMobj@Ref)
+  #PMobj@Mean <- calcMean(PMobj@Prob, MSEobj) # TO DO: circle back to calcMean() function - not working
+  PMobj@Mean <- mean(PMobj@Prob)
+  PMobj@MPs <- names(MSEobj@MPs)
+  PMobj
+}
+class(Status_25SSB0) <- 'pm'
+
+
+
+#########################################################################################################################
+
+
+#prob that SSB > 50%SSB0
+Status_50SSB0 <- function(MSEobj, Ref=0.5, Yrs=NULL) {
+  Yrs <- chk_yrs(Yrs, MSEobj)
+  PMobj <- new("PMobj")
+  PMobj@Name <- "Spawning Biomass relative to 50%SSB0"
+  if (Ref != 1) {
+    PMobj@Caption <- paste0("Prob. SB > ", Ref, " SSB0 (Proj. Years ",
+                            Yrs[1], " - ", Yrs[2]/4, ")")
+  }
+  else {
+    PMobj@Caption <- paste0("Prob. SB > SSB0 (Proj. Years ", Yrs[1],
+                            " - ", Yrs[2]/4, ")")
+  }
+  PMobj@Ref <- Ref
+
+  ###############################################################################
+  #calling RP from OM because not yet included in mse object - REMOVE WHEN FIXED
+  #importing OM with the same name as the current MSEobj
+  dir_list  <- gtools::mixedsort(list.dirs(ssdir_all, recursive=FALSE))
+  RepList   <- ImportSSReport(dir_list[grepl(MSEobj@OM@Name, dir_list, ignore.case = TRUE)])
+  #Pulling out SSB0
+  DerQuants <- RepList$`1`$derived_quants
+  SSB0 <- DerQuants[DerQuants$Label == "SSB_unfished", ]
+  SSB0 <- SSB0$Value
+  ################################################################################
+
+  #calculating annual values of SBiomass (female only)
+  SBiomass <- MSEobj@SBiomass[,1,Yrs[1]:Yrs[2],]
+  Annual_SBiomass <- as.data.frame(SBiomass) |>   #averaging across seasons to get annual values
+    tibble::rownames_to_column("Sim") |>
+    tidyr::pivot_longer(-Sim, names_to = "Year", values_to = "Value") |>
+    dplyr::mutate(Year = substr(Year, 1, 4)) |>
+    dplyr::summarise(Value = mean(Value), .by = c(Sim, Year)) |>
+    tidyr::pivot_wider(names_from = Year, values_from = Value)
+
+  Annual_SBiomass <- as.data.frame(Annual_SBiomass)
+  PMobj@Stat <- as.array(as.matrix((Annual_SBiomass |>
+                                      dplyr::mutate(dplyr::across(-Sim, ~ round(.x / SSB0,2))))))
+  #dropping Sim column and making numeric otherwise calcPrb doesn't work correctly
+  PMobj@Prob <- calcProb(apply(PMobj@Stat[,2:ncol(PMobj@Stat)], 2, as.numeric) > PMobj@Ref)
+  #PMobj@Mean <- calcMean(PMobj@Prob, MSEobj) # TO DO: circle back to calcMean() function - not working
+  PMobj@Mean <- mean(PMobj@Prob)
+  PMobj@MPs <- names(MSEobj@MPs)
+  PMobj
+}
+class(Status_50SSB0) <- 'pm'
+
+
+#########################################################################################################################
+
+
+#Average Annual Catch (Males and Females) across all Fleets for all years of the projection period
+AvgAnn_Catch <- function(MSEobj, Yrs=NULL) { #years argument will have to be whatever you want *4 because it's a seasonal model
+  Yrs <- chk_yrs(Yrs, MSEobj)
+  PMobj <- new("PMobj")
+  PMobj@Name <- "Average Annual Catch (all fleets)"
+  PMobj@Caption <- paste0('Average Catch (Years ', Yrs[1], ' - ', Yrs[2]/4, ')')
+  Catch <- MSEobj@Landings[,1,Yrs[1]:Yrs[2],,] + MSEobj@Landings[,2,Yrs[1]:Yrs[2],,]
+  Catch_allFleets <- apply(Catch, c(1,2), sum) #summing over fleets
+  Catch_Annual <- as.data.frame(Catch_allFleets) |>   #averaging across seasons to get annual values
+    tibble::rownames_to_column("Sim") |>
+    tidyr::pivot_longer(-Sim, names_to = "Year", values_to = "Value") |>
+    dplyr::mutate(Year = substr(Year, 1, 4)) |>
+    dplyr::summarise(Value = mean(Value), .by = c(Sim, Year)) |>
+    tidyr::pivot_wider(names_from = Year, values_from = Value)
+  PMobj@Stat <- as.array(as.matrix(Catch_Annual))
+  PMobj@Prob <- as.matrix(colMeans(apply(PMobj@Stat[, -1], 2, as.numeric)))
+  #AnnAvg <- as.array(colMeans(apply(PMobj@Stat[, -1], 2, as.numeric)))#not actually Prob, average annual value across simulations
+  #TO-DO: figure out how to change PMobj slots
+  #PMobj@Mean <- calcMean(PMobj@Prob, MSEobj) |> round() # TO DO: circle back to calcMean() function - not working
+  PMobj@Mean <- mean(PMobj@Prob)
+  PMobj@MPs <- names(MSEobj@MPs)
+  PMobj
+}
+class(AvgAnn_Catch) <- 'pm'
+
+
+#########################################################################################################################
+
+
+#Short-term Catch (Males and Females) across all Fleets for first 5 years of projection period
+ST_Catch <- function(MSEobj, Yrs=20) { #years argument will have to be whatever you want *4 because it's a seasonal model
+  Yrs <- chk_yrs(Yrs, MSEobj)
+  PMobj <- new("PMobj")
+  PMobj@Name <- "Average Short-Term Catch (all fleets)"
+  PMobj@Caption <- paste0('Average Catch (Years ', Yrs[1], ' - ', Yrs[2]/4, ')')
+  Catch <- MSEobj@Landings[,1,Yrs[1]:Yrs[2],,] + MSEobj@Landings[,2,Yrs[1]:Yrs[2],,]
+  Catch_allFleets <- apply(Catch, c(1,2), sum) #summing over fleets
+  Catch_Annual <- as.data.frame(Catch_allFleets) |>   #averaging across seasons to get annual values
+    tibble::rownames_to_column("Sim") |>
+    tidyr::pivot_longer(-Sim, names_to = "Year", values_to = "Value") |>
+    dplyr::mutate(Year = substr(Year, 1, 4)) |>
+    dplyr::summarise(Value = mean(Value), .by = c(Sim, Year)) |>
+    tidyr::pivot_wider(names_from = Year, values_from = Value)
+  PMobj@Stat <- as.array(as.matrix(Catch_Annual))
+  PMobj@Prob <- as.matrix(colMeans(apply(PMobj@Stat[, -1], 2, as.numeric)))
+  #AnnAvg <- as.array(colMeans(apply(PMobj@Stat[, -1], 2, as.numeric)))#not actually Prob, average annual value across simulations
+  #TO-DO: figure out how to change PMobj slots
+  #PMobj@Mean <- calcMean(PMobj@Prob, MSEobj) |> round() # TO DO: circle back to calcMean() function - not working
+  PMobj@Mean <- mean(PMobj@Prob)
+  PMobj@MPs <- names(MSEobj@MPs)
+  PMobj
+}
+class(ST_Catch) <- 'pm'
+

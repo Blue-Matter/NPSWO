@@ -6,7 +6,7 @@ chk_yrs <- function (Yrs, MSEobj)
          call. = FALSE)
   if (is.null(Yrs)) {
     y.st <- 1
-    y.end <- MSEobj@OM@pYear*4 #need to decide how to handle this because it's seasonal
+    y.end <- MSEobj@OM@pYear*4 #multiplied by 4 because this is a seasonal model
   }
   else {
     if (length(Yrs) == 1) {
@@ -46,16 +46,16 @@ chk_yrs <- function (Yrs, MSEobj)
 
 
 
-#calcMean()
-calcMean <- function (PM, MSEobj)
-{
-  if (length(MSEobj@MPs) > 1) {
-    mar <- 2
-  }
-  else mar <- 1
-  mar <- 1:mar
-  apply(PM, mar, mean, na.rm = TRUE)
-}
+#calcMean() - confused about how it's a function of PM...throwing errors so leaving out for now
+#calcMean <- function (PM, MSEobj)
+#{
+ # if (length(MSEobj@MPs) > 1) {
+#    mar <- 2
+#  }
+#  else mar <- 1
+#  mar <- 1:mar
+#  apply(PM, mar, mean, na.rm = TRUE)
+#}
 
 
 #calcProb()
