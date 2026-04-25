@@ -41,7 +41,7 @@ Safety_MSY <- function(MSEobj, Ref=1, Yrs=NULL) {
   PMobj@Prob <- calcProb(apply(PMobj@Stat[,2:ncol(PMobj@Stat)], 2, as.numeric) < PMobj@Ref)
   #PMobj@Mean <- calcMean(PMobj@Prob, MSEobj) # TO DO: circle back to calcMean() function - not working
   PMobj@Mean <- mean(PMobj@Prob)
-  PMobj@MPs <- names(MSEobj@MPs)
+  PMobj@MPs  <- names(MSEobj@MPs)
   PMobj
 }
 class(Safety_MSY) <- 'pm'
@@ -91,7 +91,7 @@ Safety_17SSB0 <- function(MSEobj, Ref=.17, Yrs=NULL) {
   PMobj@Prob <- calcProb(apply(PMobj@Stat[,2:ncol(PMobj@Stat)], 2, as.numeric) < PMobj@Ref)
   #PMobj@Mean <- calcMean(PMobj@Prob, MSEobj) # TO DO: circle back to calcMean() function - not working
   PMobj@Mean <- mean(PMobj@Prob)
-  PMobj@MPs <- names(MSEobj@MPs)
+  PMobj@MPs  <- names(MSEobj@MPs)
   PMobj
 }
 class(Safety_17SSB0) <- 'pm'
@@ -142,7 +142,7 @@ Status_25SSB0 <- function(MSEobj, Ref=0.25, Yrs=NULL) {
   PMobj@Prob <- calcProb(apply(PMobj@Stat[,2:ncol(PMobj@Stat)], 2, as.numeric) > PMobj@Ref)
   #PMobj@Mean <- calcMean(PMobj@Prob, MSEobj) # TO DO: circle back to calcMean() function - not working
   PMobj@Mean <- mean(PMobj@Prob)
-  PMobj@MPs <- names(MSEobj@MPs)
+  PMobj@MPs  <- names(MSEobj@MPs)
   PMobj
 }
 class(Status_25SSB0) <- 'pm'
@@ -194,7 +194,7 @@ Status_50SSB0 <- function(MSEobj, Ref=0.5, Yrs=NULL) {
   PMobj@Prob <- calcProb(apply(PMobj@Stat[,2:ncol(PMobj@Stat)], 2, as.numeric) > PMobj@Ref)
   #PMobj@Mean <- calcMean(PMobj@Prob, MSEobj) # TO DO: circle back to calcMean() function - not working
   PMobj@Mean <- mean(PMobj@Prob)
-  PMobj@MPs <- names(MSEobj@MPs)
+  PMobj@MPs  <- names(MSEobj@MPs)
   PMobj
 }
 class(Status_50SSB0) <- 'pm'
@@ -217,13 +217,13 @@ AvgAnn_Catch <- function(MSEobj, Yrs=NULL) { #years argument will have to be wha
     dplyr::mutate(Year = substr(Year, 1, 4)) |>
     dplyr::summarise(Value = mean(Value), .by = c(Sim, Year)) |>
     tidyr::pivot_wider(names_from = Year, values_from = Value)
+
   PMobj@Stat <- as.array(as.matrix(Catch_Annual))
   PMobj@Prob <- as.matrix(colMeans(apply(PMobj@Stat[, -1], 2, as.numeric)))
-  #AnnAvg <- as.array(colMeans(apply(PMobj@Stat[, -1], 2, as.numeric)))#not actually Prob, average annual value across simulations
   #TO-DO: figure out how to change PMobj slots
   #PMobj@Mean <- calcMean(PMobj@Prob, MSEobj) |> round() # TO DO: circle back to calcMean() function - not working
   PMobj@Mean <- mean(PMobj@Prob)
-  PMobj@MPs <- names(MSEobj@MPs)
+  PMobj@MPs  <- names(MSEobj@MPs)
   PMobj
 }
 class(AvgAnn_Catch) <- 'pm'
@@ -246,13 +246,13 @@ ST_Catch <- function(MSEobj, Yrs=20) { #years argument will have to be whatever 
     dplyr::mutate(Year = substr(Year, 1, 4)) |>
     dplyr::summarise(Value = mean(Value), .by = c(Sim, Year)) |>
     tidyr::pivot_wider(names_from = Year, values_from = Value)
+
   PMobj@Stat <- as.array(as.matrix(Catch_Annual))
   PMobj@Prob <- as.matrix(colMeans(apply(PMobj@Stat[, -1], 2, as.numeric)))
-  #AnnAvg <- as.array(colMeans(apply(PMobj@Stat[, -1], 2, as.numeric)))#not actually Prob, average annual value across simulations
   #TO-DO: figure out how to change PMobj slots
   #PMobj@Mean <- calcMean(PMobj@Prob, MSEobj) |> round() # TO DO: circle back to calcMean() function - not working
   PMobj@Mean <- mean(PMobj@Prob)
-  PMobj@MPs <- names(MSEobj@MPs)
+  PMobj@MPs  <- names(MSEobj@MPs)
   PMobj
 }
 class(ST_Catch) <- 'pm'
