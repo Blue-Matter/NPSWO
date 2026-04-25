@@ -75,27 +75,27 @@ Status_50SSB0(highh) #mean 1
 
 #Average annual catch (males and females) over entire projection period
 # Running into issues with this - saying 'Incomplete PMobj', so manually extracting slots
-base_catch = AvgAnn_Catch(base)
+base_catch <- AvgAnn_Catch(base)
 base_catch@Stat #avg annual catch values by sim
 base_catch@Prob #avg annual catch values (not actually Prob)
 base_catch@Mean #avg catch value
 
-lowM_catch = AvgAnn_Catch(lowM)
+lowM_catch <- AvgAnn_Catch(lowM)
 lowM_catch@Stat #avg annual catch values by sim
 lowM_catch@Prob #avg annual catch values (not actually Prob)
 lowM_catch@Mean #avg catch value
 
-highM_catch = AvgAnn_Catch(highM)
+highM_catch <- AvgAnn_Catch(highM)
 highM_catch@Stat #avg annual catch values by sim
 highM_catch@Prob #avg annual catch values (not actually Prob)
 highM_catch@Mean #avg catch value
 
-lowh_catch = AvgAnn_Catch(lowh)
+lowh_catch <- AvgAnn_Catch(lowh)
 lowh_catch@Stat #avg annual catch values by sim
 lowh_catch@Prob #avg annual catch values (not actually Prob)
 lowh_catch@Mean #avg catch value
 
-highh_catch = AvgAnn_Catch(highh)
+highh_catch <- AvgAnn_Catch(highh)
 highh_catch@Stat #avg annual catch values by sim
 highh_catch@Prob #avg annual catch values (not actually Prob)
 highh_catch@Mean #avg catch value
@@ -104,27 +104,27 @@ highh_catch@Mean #avg catch value
 
 #Average annual catch (males and females) over first 10 years of projection period
 # Running into issues with this - saying 'Incomplete PMobj', so manually extracting slots
-base_STcatch = ST_Catch(base)
+base_STcatch <- ST_Catch(base)
 base_STcatch@Stat #avg annual catch values by sim
 base_STcatch@Prob #avg annual catch values (not actually Prob)
 base_STcatch@Mean #avg catch value
 
-lowM_STcatch = ST_Catch(lowM)
+lowM_STcatch <- ST_Catch(lowM)
 lowM_STcatch@Stat #avg annual catch values by sim
 lowM_STcatch@Prob #avg annual catch values (not actually Prob)
 lowM_STcatch@Mean #avg catch value
 
-highM_STcatch = ST_Catch(highM)
+highM_STcatch <- ST_Catch(highM)
 highM_STcatch@Stat #avg annual catch values by sim
 highM_STcatch@Prob #avg annual catch values (not actually Prob)
 highM_STcatch@Mean #avg catch value
 
-lowh_STcatch = ST_Catch(lowh)
+lowh_STcatch <- ST_Catch(lowh)
 lowh_STcatch@Stat #avg annual catch values by sim
 lowh_STcatch@Prob #avg annual catch values (not actually Prob)
 lowh_STcatch@Mean #avg catch value
 
-highh_STcatch = ST_Catch(highh)
+highh_STcatch <- ST_Catch(highh)
 highh_STcatch@Stat #avg annual catch values by sim
 highh_STcatch@Prob #avg annual catch values (not actually Prob)
 highh_STcatch@Mean #avg catch value
